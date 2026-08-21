@@ -169,6 +169,8 @@ body {
 .charts-panel {
   display: grid;
   gap: 18px;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .fee-boxes {
@@ -780,6 +782,61 @@ html[data-theme="light"] .dash-tab.is-active {
   flex-wrap: wrap;
 }
 
+.event-cards {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.event-card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 12px 12px 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.event-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.event-card__contract {
+  color: var(--accent);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.event-card__meta {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.event-card__event {
+  font-family: var(--display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.event-card__args {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.event-card__tx {
+  font-size: 0.72rem;
+  justify-self: start;
+}
+
 .filter-chip,
 .theme-btn {
   appearance: none;
@@ -1116,18 +1173,46 @@ th {
     flex-wrap: nowrap;
     gap: 6px;
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
-    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0;
+    margin: 0 -2px;
+    padding-inline: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .event-filters::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   .event-filters .filter-chip {
     flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .charts-toolbar .event-filters {
+    width: 100%;
+  }
+
+  .events-desktop {
+    display: none !important;
+  }
+
+  .event-cards {
+    display: grid;
+    gap: 8px;
+    margin-top: 4px;
   }
 
   .charts-frame {
     min-height: 320px;
     padding: 8px 4px 4px;
+    overflow-x: hidden;
   }
 
   .charts-frame--compact {
@@ -1138,24 +1223,19 @@ th {
     min-height: 280px !important;
   }
 
-  .table-wrap,
-  .events-table-wrap {
+  .table-wrap:not(.events-table-wrap) {
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
   }
 
-  table {
+  .table-wrap:not(.events-table-wrap) table {
     font-size: 0.7rem;
-    min-width: 640px;
+    min-width: 560px;
   }
 
   th,
   td {
     padding: 9px 10px;
-  }
-
-  .events-table__args {
-    max-width: 220px;
   }
 
   .tok-hero {
