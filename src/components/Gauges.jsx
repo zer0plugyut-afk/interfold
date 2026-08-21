@@ -49,10 +49,7 @@ export function Gauges({ live, priceUsd }) {
     <section className="gauges">
       {items.map((g) => (
         <article key={g.label} className="gauge">
-          <p className="gauge__label">
-            {g.foldIcon ? <FoldIcon size={18} /> : null}
-            {g.label}
-          </p>
+          <p className="gauge__label">{g.label}</p>
           <p className="gauge__value">
             {g.foldIcon ? <FoldIcon className="gauge__fold" size={22} /> : null}
             {g.value}

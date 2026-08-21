@@ -132,38 +132,36 @@ export default function App() {
           </div>
 
           <header className="top">
-            <div>
+            <div className="top__title">
               <p className="brand__kicker">{kicker}</p>
               <h1>{title}</h1>
             </div>
+            <div className="top__search">
+              <AddressSearch
+                boardData={data}
+                onOpenResults={openSearch}
+                active={panel === "search"}
+              />
+            </div>
             <div className="top__meta">
               <div className="top__badge">Community analytics layer</div>
-              <div className="top__tools">
-                <AddressSearch
-                  boardData={data}
-                  onOpenResults={openSearch}
-                  active={panel === "search"}
-                />
-                <div className="top__price" title="CoinGecko">
-                  <FoldIcon size={18} />
-                  FOLD {formatPriceUsd(priceUsd)}
-                  {change24h != null ? (
-                    <span className={change24h >= 0 ? "tok-price--up" : "tok-price--down"}>
-                      {" "}
-                      {change24h >= 0 ? "+" : ""}
-                      {change24h.toFixed(1)}%
-                    </span>
-                  ) : null}
-                </div>
+              <div className="top__price" title="CoinGecko">
+                <FoldIcon size={18} />
+                FOLD {formatPriceUsd(priceUsd)}
+                {change24h != null ? (
+                  <span className={change24h >= 0 ? "tok-price--up" : "tok-price--down"}>
+                    {" "}
+                    {change24h >= 0 ? "+" : ""}
+                    {change24h.toFixed(1)}%
+                  </span>
+                ) : null}
               </div>
-              <div className="top__stamp">
-                <span>
-                  {data?.meta?.generatedAt
-                    ? new Date(data.meta.generatedAt).toLocaleString()
-                    : ""}
-                </span>
-                <span>Block {num(data?.meta?.latestBlock || data?.live?.latestBlock)}</span>
+              <div>
+                {data?.meta?.generatedAt
+                  ? new Date(data.meta.generatedAt).toLocaleString()
+                  : ""}
               </div>
+              <div>Block {num(data?.meta?.latestBlock || data?.live?.latestBlock)}</div>
             </div>
           </header>
 
