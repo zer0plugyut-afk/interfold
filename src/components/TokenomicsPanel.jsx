@@ -206,7 +206,7 @@ export function TokenomicsPanel() {
                 {change24h.toFixed(1)}%
               </span>
             ) : null}
-            <span className="tok-price__src">CoinGecko · 5m cache</span>
+            <span className="tok-price__src">CoinGecko</span>
           </div>
         </div>
       </div>

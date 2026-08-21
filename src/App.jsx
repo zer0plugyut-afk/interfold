@@ -97,7 +97,7 @@ export default function App() {
             </div>
             <div className="top__meta">
               <div className="top__badge">Community analytics layer</div>
-              <div className="top__price" title="CoinGecko · cached 5 min">
+              <div className="top__price" title="CoinGecko">
                 <img className="fold-icon" src="/fold.jpg" alt="" width={14} height={14} />
                 FOLD {formatPriceUsd(priceUsd)}
                 {change24h != null ? (

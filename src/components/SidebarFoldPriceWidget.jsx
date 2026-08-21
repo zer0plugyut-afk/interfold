@@ -41,7 +41,7 @@ export function SidebarFoldPriceWidget({ compact = false }) {
   return (
     <div
       className={`fold-price-widget${compact ? " fold-price-widget--compact" : ""}`}
-      title="FOLD · CoinGecko · 5m cache"
+      title="FOLD · CoinGecko"
     >
       <div className="fold-price-widget__head">
         <span className="fold-price-widget__ticker">
