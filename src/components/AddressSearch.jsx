@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { etherscanAddress, etherscanTx, num, shortAddr } from "../lib/format";
 import { searchAddressActivity } from "../lib/supabaseData";
+import { FoldIcon } from "./FoldIcon";
 
 function normalizeQuery(raw) {
   const q = String(raw || "").trim();
@@ -17,9 +18,16 @@ function summarizeArgs(args) {
   if (!args || typeof args !== "object") return "—";
   const entries = Object.entries(args)
     .filter(([k]) => k !== "encryptedVote")
-    .slice(0, 4);
+    .slice(0, 5);
   if (!entries.length) return "—";
-  return entries.map(([k, v]) => `${k}=${String(v).slice(0, 28)}`).join(" · ");
+  return entries.map(([k, v]) => `${k}=${String(v).slice(0, 40)}`).join(" · ");
+}
+
+function formatWhen(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString();
 }
 
 export function AddressSearch({ boardData, onOpenResults, active }) {
@@ -120,21 +128,72 @@ export function AddressSearchResults({ payload, onClose }) {
           {operators?.length ? (
             <div className="search-block">
               <h3>Operators</h3>
-              <ul className="event-cards">
+              <div className="search-table-wrap">
+                <table className="search-table">
+                  <thead>
+                    <tr>
+                      <th>Operator</th>
+                      <th>Bond owner</th>
+                      <th>Bonded</th>
+                      <th>Tickets</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {operators.map((o) => (
+                      <tr key={o.address}>
+                        <td>
+                          <a
+                            className="addr"
+                            href={etherscanAddress(o.address)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {shortAddr(o.address)}
+                          </a>
+                        </td>
+                        <td className="mono">
+                          <a
+                            className="addr"
+                            href={etherscanAddress(o.bondOwner)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {shortAddr(o.bondOwner)}
+                          </a>
+                        </td>
+                        <td className="mono">
+                          <span className="search-fold">
+                            <FoldIcon size={16} />
+                            {num(o.ciphernodeBond)} FOLD
+                          </span>
+                        </td>
+                        <td className="mono">{o.availableTickets}</td>
+                        <td>
+                          {o.isActive ? "active" : o.isRegistered ? "registered" : "inactive"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <ul className="search-hit-list">
                 {operators.map((o) => (
-                  <li key={o.address} className="event-card">
-                    <strong className="event-card__event">
-                      <a
-                        className="addr"
-                        href={etherscanAddress(o.address)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {shortAddr(o.address)}
-                      </a>
-                    </strong>
-                    <p className="event-card__args mono">
-                      bondOwner={shortAddr(o.bondOwner)} · bonded {num(o.ciphernodeBond)} FOLD ·
+                  <li key={`m-${o.address}`} className="search-hit">
+                    <a
+                      className="addr"
+                      href={etherscanAddress(o.address)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {shortAddr(o.address)}
+                    </a>
+                    <p className="search-hit__meta mono">
+                      <span className="search-fold">
+                        <FoldIcon size={14} />
+                        {num(o.ciphernodeBond)} FOLD
+                      </span>
+                      {" · "}
                       tickets {o.availableTickets} ·{" "}
                       {o.isActive ? "active" : o.isRegistered ? "registered" : "inactive"}
                     </p>
@@ -147,17 +206,52 @@ export function AddressSearchResults({ payload, onClose }) {
           {events?.length ? (
             <div className="search-block">
               <h3>Mainnet events</h3>
-              <ul className="event-cards">
+              <div className="search-table-wrap">
+                <table className="search-table">
+                  <thead>
+                    <tr>
+                      <th>Contract</th>
+                      <th>Event</th>
+                      <th>Block</th>
+                      <th>Details</th>
+                      <th>Time</th>
+                      <th>Tx</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map((e) => (
+                      <tr key={`${e.txHash}-${e.logIndex}`}>
+                        <td className="mono search-table__contract">{e.contract}</td>
+                        <td className="search-table__event">{e.event}</td>
+                        <td className="mono">{num(e.blockNumber)}</td>
+                        <td className="mono search-table__args">{summarizeArgs(e.args)}</td>
+                        <td className="mono">{formatWhen(e.blockTimestamp)}</td>
+                        <td>
+                          <a
+                            className="addr"
+                            href={etherscanTx(e.txHash)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {shortAddr(e.txHash)}
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <ul className="search-hit-list">
                 {events.map((e) => (
-                  <li key={`${e.txHash}-${e.logIndex}`} className="event-card">
-                    <div className="event-card__top">
-                      <span className="event-card__contract mono">{e.contract}</span>
-                      <span className="event-card__meta mono">#{num(e.blockNumber)}</span>
+                  <li key={`m-${e.txHash}-${e.logIndex}`} className="search-hit">
+                    <div className="search-hit__top">
+                      <span className="search-hit__contract mono">{e.contract}</span>
+                      <span className="search-hit__block mono">#{num(e.blockNumber)}</span>
                     </div>
-                    <strong className="event-card__event">{e.event}</strong>
-                    <p className="event-card__args mono">{summarizeArgs(e.args)}</p>
+                    <strong className="search-hit__event">{e.event}</strong>
+                    <p className="search-hit__args mono">{summarizeArgs(e.args)}</p>
                     <a
-                      className="event-card__tx addr"
+                      className="addr"
                       href={etherscanTx(e.txHash)}
                       target="_blank"
                       rel="noreferrer"
@@ -173,17 +267,50 @@ export function AddressSearchResults({ payload, onClose }) {
           {crispEvents?.length ? (
             <div className="search-block">
               <h3>CRISP (Sepolia)</h3>
-              <ul className="event-cards">
+              <div className="search-table-wrap">
+                <table className="search-table">
+                  <thead>
+                    <tr>
+                      <th>Contract</th>
+                      <th>Event</th>
+                      <th>Block</th>
+                      <th>Details</th>
+                      <th>Tx</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {crispEvents.map((e) => (
+                      <tr key={`${e.txHash}-${e.logIndex}`}>
+                        <td className="mono search-table__contract">{e.contract}</td>
+                        <td className="search-table__event">{e.event}</td>
+                        <td className="mono">{num(e.blockNumber)}</td>
+                        <td className="mono search-table__args">{summarizeArgs(e.args)}</td>
+                        <td>
+                          <a
+                            className="addr"
+                            href={`https://sepolia.etherscan.io/tx/${e.txHash}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {shortAddr(e.txHash)}
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <ul className="search-hit-list">
                 {crispEvents.map((e) => (
-                  <li key={`${e.txHash}-${e.logIndex}`} className="event-card">
-                    <div className="event-card__top">
-                      <span className="event-card__contract mono">{e.contract}</span>
-                      <span className="event-card__meta mono">#{num(e.blockNumber)}</span>
+                  <li key={`m-${e.txHash}-${e.logIndex}`} className="search-hit">
+                    <div className="search-hit__top">
+                      <span className="search-hit__contract mono">{e.contract}</span>
+                      <span className="search-hit__block mono">#{num(e.blockNumber)}</span>
                     </div>
-                    <strong className="event-card__event">{e.event}</strong>
-                    <p className="event-card__args mono">{summarizeArgs(e.args)}</p>
+                    <strong className="search-hit__event">{e.event}</strong>
+                    <p className="search-hit__args mono">{summarizeArgs(e.args)}</p>
                     <a
-                      className="event-card__tx addr"
+                      className="addr"
                       href={`https://sepolia.etherscan.io/tx/${e.txHash}`}
                       target="_blank"
                       rel="noreferrer"

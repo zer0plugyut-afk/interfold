@@ -197,7 +197,7 @@ export function TokenomicsPanel() {
         <div className="tok-asof">
           <div>As of {nowLabel} UTC</div>
           <div className="tok-price">
-            <FoldIcon size={16} />
+            <FoldIcon size={20} />
             FOLD {priceLoading && priceUsd == null ? "…" : formatPriceUsd(priceUsd)}
             {change24h != null ? (
               <span className={change24h >= 0 ? "tok-price--up" : "tok-price--down"}>
@@ -225,7 +225,7 @@ export function TokenomicsPanel() {
         <div className="tok-hero__mkt">
           <div className="tok-mkt-card">
             <p className="tok-tile__label">
-              <FoldIcon size={14} /> Market cap
+              <FoldIcon size={18} /> Market cap
             </p>
             <strong className="tok-mkt-card__value">
               {priceUsd != null
@@ -236,7 +236,7 @@ export function TokenomicsPanel() {
           </div>
           <div className="tok-mkt-card">
             <p className="tok-tile__label">
-              <FoldIcon size={14} /> FDV
+              <FoldIcon size={18} /> FDV
             </p>
             <strong className="tok-mkt-card__value">
               {priceUsd != null ? formatUsd(snap.totalSupply, priceUsd) : "—"}

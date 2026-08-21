@@ -16,6 +16,7 @@ import { getDapp } from "./lib/dapps";
 import { formatPriceUsd } from "./lib/foldPrice";
 import { num } from "./lib/format";
 import { Moon, Sun } from "lucide-react";
+import { FoldIcon } from "./components/FoldIcon";
 
 const TITLES = {
   operators: ["Operators", "Network-wide ciphernode set"],
@@ -137,28 +138,32 @@ export default function App() {
             </div>
             <div className="top__meta">
               <div className="top__badge">Community analytics layer</div>
-              <AddressSearch
-                boardData={data}
-                onOpenResults={openSearch}
-                active={panel === "search"}
-              />
-              <div className="top__price" title="CoinGecko">
-                <img className="fold-icon" src="/fold.jpg" alt="" width={14} height={14} />
-                FOLD {formatPriceUsd(priceUsd)}
-                {change24h != null ? (
-                  <span className={change24h >= 0 ? "tok-price--up" : "tok-price--down"}>
-                    {" "}
-                    {change24h >= 0 ? "+" : ""}
-                    {change24h.toFixed(1)}%
-                  </span>
-                ) : null}
+              <div className="top__tools">
+                <AddressSearch
+                  boardData={data}
+                  onOpenResults={openSearch}
+                  active={panel === "search"}
+                />
+                <div className="top__price" title="CoinGecko">
+                  <FoldIcon size={18} />
+                  FOLD {formatPriceUsd(priceUsd)}
+                  {change24h != null ? (
+                    <span className={change24h >= 0 ? "tok-price--up" : "tok-price--down"}>
+                      {" "}
+                      {change24h >= 0 ? "+" : ""}
+                      {change24h.toFixed(1)}%
+                    </span>
+                  ) : null}
+                </div>
               </div>
-              <div>
-                {data?.meta?.generatedAt
-                  ? new Date(data.meta.generatedAt).toLocaleString()
-                  : ""}
+              <div className="top__stamp">
+                <span>
+                  {data?.meta?.generatedAt
+                    ? new Date(data.meta.generatedAt).toLocaleString()
+                    : ""}
+                </span>
+                <span>Block {num(data?.meta?.latestBlock || data?.live?.latestBlock)}</span>
               </div>
-              <div>Block {num(data?.meta?.latestBlock || data?.live?.latestBlock)}</div>
             </div>
           </header>
 

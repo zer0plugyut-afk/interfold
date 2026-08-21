@@ -45,7 +45,7 @@ export function SidebarFoldPriceWidget({ compact = false }) {
     >
       <div className="fold-price-widget__head">
         <span className="fold-price-widget__ticker">
-          <FoldIcon size={compact ? 14 : 16} />
+          <FoldIcon size={compact ? 16 : 20} />
           FOLD
         </span>
         <span className={`fold-price-widget__pct ${up ? "is-up" : "is-down"}`}>

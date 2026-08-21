@@ -1,5 +1,6 @@
 import { num } from "../lib/format";
 import { formatUsd } from "../lib/foldPrice";
+import { FoldIcon } from "./FoldIcon";
 
 export function Gauges({ live, priceUsd }) {
   if (!live) return null;
@@ -13,6 +14,7 @@ export function Gauges({ live, priceUsd }) {
       value: num(live.totalCiphernodeBondLiability),
       usd: priceUsd != null ? formatUsd(bond, priceUsd) : null,
       hint: `floor ${num(live.requiredCiphernodeBond)} / node`,
+      foldIcon: true,
     },
     {
       label: "Ticket supply (tFOLD)",
@@ -34,6 +36,7 @@ export function Gauges({ live, priceUsd }) {
       value: num(live.foldTotalSupply),
       usd: priceUsd != null ? formatUsd(foldSupply, priceUsd) : null,
       hint: "InterfoldToken",
+      foldIcon: true,
     },
     {
       label: "Unreleased committees",
@@ -46,8 +49,14 @@ export function Gauges({ live, priceUsd }) {
     <section className="gauges">
       {items.map((g) => (
         <article key={g.label} className="gauge">
-          <p className="gauge__label">{g.label}</p>
-          <p className="gauge__value">{g.value}</p>
+          <p className="gauge__label">
+            {g.foldIcon ? <FoldIcon size={18} /> : null}
+            {g.label}
+          </p>
+          <p className="gauge__value">
+            {g.foldIcon ? <FoldIcon className="gauge__fold" size={22} /> : null}
+            {g.value}
+          </p>
           {g.usd ? <p className="gauge__usd">{g.usd}</p> : null}
           <p className="gauge__hint">{g.hint}</p>
         </article>
