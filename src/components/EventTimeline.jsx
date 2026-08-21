@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CONTRACT_FILTER_META } from "../lib/icons";
+import {
+  countByPhase,
+  eventMatchesPhase,
+  phasesForContract,
+} from "../lib/eventPhaseFilters";
 import { etherscanTx, num, shortAddr } from "../lib/format";
 import { EventDetailDrawer } from "./EventDetailDrawer";
 
@@ -103,27 +108,134 @@ function Pagination({ page, pageCount, total, pageSize, onPage }) {
   );
 }
 
+/** hl.eco-style primary + connected phase sub-tabs (UI-only). */
+function TreeEventFilters({ contract, phase, onContractChange, onPhaseChange, contractCounts, phaseCounts }) {
+  const rowRef = useRef(null);
+  const activeRef = useRef(null);
+  const [branchX, setBranchX] = useState(20);
+  const phases = phasesForContract(contract);
+
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const measure = () => {
+      if (!rowRef.current || !activeRef.current || !phases) return;
+      const rowBox = rowRef.current.getBoundingClientRect();
+      const btn = activeRef.current.getBoundingClientRect();
+      const x = Math.max(12, btn.left + btn.width / 2 - rowBox.left);
+      setBranchX(x);
+    };
+    measure();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (ro && row) ro.observe(row);
+    window.addEventListener("resize", measure);
+    row?.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+      row?.removeEventListener("scroll", measure);
+    };
+  }, [contract, phases]);
+
+  return (
+    <div className="tree-filters">
+      <div className="tree-filters__row event-filters" role="tablist" aria-label="Contract filter" ref={rowRef}>
+        {CONTRACT_FILTER_META.map(({ id, label, Icon }) => {
+          const active = contract === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              ref={active ? activeRef : undefined}
+              className={`filter-chip filter-chip--icon ${active ? "is-active" : ""}`}
+              onClick={() => onContractChange(id)}
+            >
+              <Icon size={16} strokeWidth={2} aria-hidden />
+              <span>{label}</span>
+              <span className="filter-chip__n">{contractCounts[id] || 0}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {phases ? (
+        <div className="tree-filters__branch" style={{ "--branch-x": `${branchX}px` }}>
+          <div className="tree-filters__elbow" aria-hidden />
+          <div
+            className="tree-filters__row tree-filters__row--sub event-filters"
+            role="tablist"
+            aria-label="Event phase filter"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={phase === "all"}
+              className={`filter-chip filter-chip--sub ${phase === "all" ? "is-active-path" : ""}`}
+              onClick={() => onPhaseChange("all")}
+            >
+              All
+              <span className="filter-chip__n">{phaseCounts.all || 0}</span>
+            </button>
+            {phases.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={phase === id}
+                className={`filter-chip filter-chip--sub ${phase === id ? "is-active-path" : ""}`}
+                onClick={() => onPhaseChange(id)}
+              >
+                {label}
+                <span className="filter-chip__n">{phaseCounts[id] || 0}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function EventTimeline({ timeline, filter, onFilterChange }) {
+  const [phase, setPhase] = useState("all");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(null);
 
-  const counts = { all: timeline.length };
-  for (const meta of CONTRACT_FILTER_META) {
-    if (meta.id === "all") continue;
-    counts[meta.id] = timeline.filter((e) => e.contract === meta.id).length;
-  }
+  const contractCounts = useMemo(() => {
+    const counts = { all: timeline.length };
+    for (const meta of CONTRACT_FILTER_META) {
+      if (meta.id === "all") continue;
+      counts[meta.id] = timeline.filter((e) => e.contract === meta.id).length;
+    }
+    return counts;
+  }, [timeline]);
 
-  const filtered = useMemo(
-    () => (filter === "all" ? timeline : timeline.filter((e) => e.contract === filter)),
+  const phaseCounts = useMemo(
+    () => (filter === "all" ? { all: 0 } : countByPhase(timeline, filter)),
     [timeline, filter]
   );
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return timeline;
+    return timeline.filter(
+      (e) => e.contract === filter && eventMatchesPhase(filter, phase, e.event)
+    );
+  }, [timeline, filter, phase]);
+
   const showContractCol = filter === "all";
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
   useEffect(() => {
+    setPhase("all");
     setPage(0);
     setSelected(null);
   }, [filter]);
+
+  useEffect(() => {
+    setPage(0);
+    setSelected(null);
+  }, [phase]);
 
   useEffect(() => {
     if (page > pageCount - 1) setPage(Math.max(0, pageCount - 1));
@@ -144,22 +256,14 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
 
   return (
     <div className="events-panel">
-      <div className="event-filters" role="tablist" aria-label="Contract filter">
-        {CONTRACT_FILTER_META.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={filter === id}
-            className={`filter-chip filter-chip--icon ${filter === id ? "is-active" : ""}`}
-            onClick={() => onFilterChange(id)}
-          >
-            <Icon size={16} strokeWidth={2} aria-hidden />
-            <span>{label}</span>
-            <span className="filter-chip__n">{counts[id] || 0}</span>
-          </button>
-        ))}
-      </div>
+      <TreeEventFilters
+        contract={filter}
+        phase={phase}
+        onContractChange={onFilterChange}
+        onPhaseChange={setPhase}
+        contractCounts={contractCounts}
+        phaseCounts={phaseCounts}
+      />
 
       {!filtered.length ? (
         <div className="empty" style={{ marginTop: 12 }}>

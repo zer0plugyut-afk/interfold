@@ -1158,6 +1158,61 @@ html[data-theme="light"] .dash-tab.is-active {
   flex-wrap: wrap;
 }
 
+/* hl.eco-style nested filters: parent chips + elbow connector + phase sub-tabs */
+.tree-filters {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.tree-filters__row {
+  min-width: 0;
+}
+
+.tree-filters__branch {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  --branch-x: 24px;
+}
+
+.tree-filters__elbow {
+  box-sizing: border-box;
+  height: 16px;
+  width: 22px;
+  margin-left: var(--branch-x);
+  border-left: 1.5px solid var(--accent);
+  border-bottom: 1.5px solid var(--accent);
+  border-bottom-left-radius: 10px;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.tree-filters__row--sub {
+  margin-top: -1px;
+  padding-bottom: 2px;
+  padding-left: max(0px, calc(var(--branch-x) - 2px));
+}
+
+.filter-chip--sub {
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.filter-chip--sub.is-active-path {
+  background: transparent;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+html[data-theme="light"] .filter-chip--sub.is-active-path {
+  color: color-mix(in srgb, var(--accent) 75%, #0a0a0a);
+}
+
 .event-cards {
   display: none;
   list-style: none;
@@ -1700,6 +1755,10 @@ th {
     padding-inline: 2px;
     scrollbar-width: none;
     -ms-overflow-style: none;
+  }
+
+  .tree-filters__row--sub {
+    scroll-padding-left: max(0px, calc(var(--branch-x) - 2px));
   }
 
   .event-filters::-webkit-scrollbar {
