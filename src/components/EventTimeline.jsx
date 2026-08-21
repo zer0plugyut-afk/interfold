@@ -108,37 +108,125 @@ function Pagination({ page, pageCount, total, pageSize, onPage }) {
   );
 }
 
+const CONNECTOR_RADIUS = 10;
+
+/** Path from parent chip bottom-center → active sub-chip edge (passes behind inactive pills). */
+function buildConnectorPath(rootBox, parentBox, childBox) {
+  const fromX = parentBox.left + parentBox.width / 2 - rootBox.left;
+  const fromY = parentBox.bottom - rootBox.top;
+  const midY = childBox.top + childBox.height / 2 - rootBox.top;
+  const childLeft = childBox.left - rootBox.left;
+  const childRight = childBox.right - rootBox.left;
+  const childMid = childLeft + childBox.width / 2;
+  const r = CONNECTOR_RADIUS;
+
+  // Nearly under the parent: drop into the top of the chip
+  if (Math.abs(childMid - fromX) <= r + 6) {
+    const toY = childBox.top - rootBox.top;
+    return `M ${fromX.toFixed(1)} ${fromY.toFixed(1)} L ${fromX.toFixed(1)} ${toY.toFixed(1)}`;
+  }
+
+  const goRight = childMid >= fromX;
+  const toX = goRight ? childLeft : childRight;
+  const turnY = midY - r;
+  const qx = goRight ? fromX + r : fromX - r;
+
+  if (turnY <= fromY + 2) {
+    // Not enough room for a full elbow — horizontal at midY with a tight bend
+    return [
+      `M ${fromX.toFixed(1)} ${fromY.toFixed(1)}`,
+      `L ${fromX.toFixed(1)} ${midY.toFixed(1)}`,
+      `L ${toX.toFixed(1)} ${midY.toFixed(1)}`,
+    ].join(" ");
+  }
+
+  return [
+    `M ${fromX.toFixed(1)} ${fromY.toFixed(1)}`,
+    `L ${fromX.toFixed(1)} ${turnY.toFixed(1)}`,
+    `Q ${fromX.toFixed(1)} ${midY.toFixed(1)} ${qx.toFixed(1)} ${midY.toFixed(1)}`,
+    `L ${toX.toFixed(1)} ${midY.toFixed(1)}`,
+  ].join(" ");
+}
+
 /** hl.eco-style primary + connected phase sub-tabs (UI-only). */
 function TreeEventFilters({ contract, phase, onContractChange, onPhaseChange, contractCounts, phaseCounts }) {
-  const rowRef = useRef(null);
-  const activeRef = useRef(null);
-  const [branchX, setBranchX] = useState(20);
+  const rootRef = useRef(null);
+  const parentRowRef = useRef(null);
+  const parentActiveRef = useRef(null);
+  const subRowRef = useRef(null);
+  const subActiveRef = useRef(null);
+  const [connector, setConnector] = useState({ d: "", w: 0, h: 0, branchX: 0 });
   const phases = phasesForContract(contract);
 
   useLayoutEffect(() => {
-    const row = rowRef.current;
+    const root = rootRef.current;
+    const parentRow = parentRowRef.current;
+    const subRow = subRowRef.current;
+
     const measure = () => {
-      if (!rowRef.current || !activeRef.current || !phases) return;
-      const rowBox = rowRef.current.getBoundingClientRect();
-      const btn = activeRef.current.getBoundingClientRect();
-      const x = Math.max(12, btn.left + btn.width / 2 - rowBox.left);
-      setBranchX(x);
+      if (!root || !parentActiveRef.current || !phases) {
+        setConnector({ d: "", w: 0, h: 0, branchX: 0 });
+        return;
+      }
+      const rootBox = root.getBoundingClientRect();
+      const parentBox = parentActiveRef.current.getBoundingClientRect();
+      const branchX = Math.max(0, parentBox.left + parentBox.width / 2 - rootBox.left);
+
+      // Apply indent before measuring the active sub chip so path targets the final layout
+      root.style.setProperty("--branch-x", `${branchX}px`);
+
+      const childEl = subActiveRef.current;
+      if (!childEl) {
+        setConnector({ d: "", w: root.offsetWidth, h: root.offsetHeight, branchX });
+        return;
+      }
+
+      const d = buildConnectorPath(rootBox, parentBox, childEl.getBoundingClientRect());
+      setConnector({ d, w: root.offsetWidth, h: root.offsetHeight, branchX });
     };
+
     measure();
+    // Second pass after padding / wrap settles
+    const raf = requestAnimationFrame(measure);
+
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
-    if (ro && row) ro.observe(row);
+    if (ro && root) ro.observe(root);
     window.addEventListener("resize", measure);
-    row?.addEventListener("scroll", measure, { passive: true });
+    parentRow?.addEventListener("scroll", measure, { passive: true });
+    subRow?.addEventListener("scroll", measure, { passive: true });
     return () => {
+      cancelAnimationFrame(raf);
       ro?.disconnect();
       window.removeEventListener("resize", measure);
-      row?.removeEventListener("scroll", measure);
+      parentRow?.removeEventListener("scroll", measure);
+      subRow?.removeEventListener("scroll", measure);
     };
-  }, [contract, phases]);
+  }, [contract, phase, phases]);
 
   return (
-    <div className="tree-filters">
-      <div className="tree-filters__row event-filters" role="tablist" aria-label="Contract filter" ref={rowRef}>
+    <div
+      className="tree-filters"
+      ref={rootRef}
+      style={connector.branchX ? { "--branch-x": `${connector.branchX}px` } : undefined}
+    >
+      {phases && connector.d ? (
+        <svg
+          className="tree-filters__connector"
+          width={connector.w}
+          height={connector.h}
+          viewBox={`0 0 ${connector.w} ${connector.h}`}
+          aria-hidden
+        >
+          <path d={connector.d} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      ) : null}
+
+      <div
+        className="tree-filters__row event-filters"
+        role="tablist"
+        aria-label="Contract filter"
+        ref={parentRowRef}
+      >
         {CONTRACT_FILTER_META.map(({ id, label, Icon }) => {
           const active = contract === id;
           return (
@@ -147,7 +235,7 @@ function TreeEventFilters({ contract, phase, onContractChange, onPhaseChange, co
               type="button"
               role="tab"
               aria-selected={active}
-              ref={active ? activeRef : undefined}
+              ref={active ? parentActiveRef : undefined}
               className={`filter-chip filter-chip--icon ${active ? "is-active" : ""}`}
               onClick={() => onContractChange(id)}
             >
@@ -160,37 +248,37 @@ function TreeEventFilters({ contract, phase, onContractChange, onPhaseChange, co
       </div>
 
       {phases ? (
-        <div className="tree-filters__branch" style={{ "--branch-x": `${branchX}px` }}>
-          <div className="tree-filters__elbow" aria-hidden />
-          <div
-            className="tree-filters__row tree-filters__row--sub event-filters"
-            role="tablist"
-            aria-label="Event phase filter"
+        <div
+          className="tree-filters__row tree-filters__row--sub event-filters"
+          role="tablist"
+          aria-label="Event phase filter"
+          ref={subRowRef}
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={phase === "all"}
+            ref={phase === "all" ? subActiveRef : undefined}
+            className={`filter-chip filter-chip--sub ${phase === "all" ? "is-active-path" : ""}`}
+            onClick={() => onPhaseChange("all")}
           >
+            All
+            <span className="filter-chip__n">{phaseCounts.all || 0}</span>
+          </button>
+          {phases.map(({ id, label }) => (
             <button
+              key={id}
               type="button"
               role="tab"
-              aria-selected={phase === "all"}
-              className={`filter-chip filter-chip--sub ${phase === "all" ? "is-active-path" : ""}`}
-              onClick={() => onPhaseChange("all")}
+              aria-selected={phase === id}
+              ref={phase === id ? subActiveRef : undefined}
+              className={`filter-chip filter-chip--sub ${phase === id ? "is-active-path" : ""}`}
+              onClick={() => onPhaseChange(id)}
             >
-              All
-              <span className="filter-chip__n">{phaseCounts.all || 0}</span>
+              {label}
+              <span className="filter-chip__n">{phaseCounts[id] || 0}</span>
             </button>
-            {phases.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={phase === id}
-                className={`filter-chip filter-chip--sub ${phase === id ? "is-active-path" : ""}`}
-                onClick={() => onPhaseChange(id)}
-              >
-                {label}
-                <span className="filter-chip__n">{phaseCounts[id] || 0}</span>
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       ) : null}
     </div>

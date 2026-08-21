@@ -1158,59 +1158,35 @@ html[data-theme="light"] .dash-tab.is-active {
   flex-wrap: wrap;
 }
 
-/* hl.eco-style nested filters: parent chips + elbow connector + phase sub-tabs */
+/* hl.eco-style nested filters: SVG path runs behind inactive phase pills */
 .tree-filters {
+  position: relative;
   display: grid;
   gap: 0;
   min-width: 0;
+}
+
+.tree-filters__connector {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  pointer-events: none;
+  color: var(--accent);
+  overflow: visible;
 }
 
 .tree-filters__row {
+  position: relative;
+  z-index: 1;
   min-width: 0;
-}
-
-.tree-filters__branch {
-  display: grid;
-  gap: 0;
-  min-width: 0;
-  --branch-x: 24px;
-}
-
-.tree-filters__elbow {
-  box-sizing: border-box;
-  height: 16px;
-  width: 22px;
-  margin-left: var(--branch-x);
-  border-left: 1.5px solid var(--accent);
-  border-bottom: 1.5px solid var(--accent);
-  border-bottom-left-radius: 10px;
-  opacity: 0.9;
-  pointer-events: none;
 }
 
 .tree-filters__row--sub {
-  margin-top: -1px;
+  margin-top: 14px;
   padding-bottom: 2px;
-  padding-left: max(0px, calc(var(--branch-x) - 2px));
-}
-
-.filter-chip--sub {
-  border-radius: 999px;
-  padding: 6px 12px;
-  background: transparent;
-  color: var(--muted);
-}
-
-.filter-chip--sub.is-active-path {
-  background: transparent;
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 600;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
-}
-
-html[data-theme="light"] .filter-chip--sub.is-active-path {
-  color: color-mix(in srgb, var(--accent) 75%, #0a0a0a);
+  /* Start under the active parent so the line runs right behind earlier pills */
+  padding-left: max(0px, calc(var(--branch-x, 0px) - 2px));
 }
 
 .event-cards {
@@ -1359,6 +1335,31 @@ html[data-theme="light"] .filter-chip--sub.is-active-path {
 
 html[data-theme="light"] .filter-chip.is-active {
   color: #fff;
+}
+
+/* After .filter-chip so opaque fill wins — line only visible in gaps (hl.eco) */
+.tree-filters .filter-chip.filter-chip--sub {
+  position: relative;
+  z-index: 1;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background-color: var(--ink);
+  background-image: none;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.tree-filters .filter-chip.filter-chip--sub.is-active-path {
+  background-color: var(--ink);
+  background-image: none;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+html[data-theme="light"] .tree-filters .filter-chip.filter-chip--sub.is-active-path {
+  color: color-mix(in srgb, var(--accent) 75%, #0a0a0a);
 }
 
 .filter-chip__n {
