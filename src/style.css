@@ -37,10 +37,20 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  height: 100%;
   color: var(--text);
   font-family: var(--mono);
   background: var(--ink);
-  overflow-x: hidden;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  html,
+  body {
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 }
 
 body {
@@ -1023,6 +1033,11 @@ th {
   background: var(--panel-soft);
 }
 
+/* Hidden on desktop; shown inside the max-width 900px block below */
+.mobile-bar {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .shell {
     grid-template-columns: 1fr;
@@ -1035,7 +1050,7 @@ th {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     margin: 0 0 14px;
     padding-bottom: 12px;
     border-bottom: 1px solid var(--line);
@@ -1053,6 +1068,13 @@ th {
     font-size: 1rem;
   }
 
+  .mobile-bar__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
   .brand__mark--sm {
     width: 36px;
     height: 36px;
@@ -1061,6 +1083,34 @@ th {
 
   .theme-btn--mobile {
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .fold-price-widget--compact {
+    width: 112px;
+    padding: 6px 8px 4px;
+    margin: 0;
+  }
+
+  .fold-price-widget--compact .fold-price-widget__price {
+    font-size: 0.85rem;
+    margin-top: 2px;
+  }
+
+  .fold-price-widget--compact .fold-price-widget__spark {
+    height: 28px;
+    margin-top: 4px;
+  }
+
+  .fold-price-widget--compact .fold-price-widget__ticker {
+    font-size: 0.58rem;
+  }
+
+  .fold-price-widget--compact .fold-price-widget__pct {
+    font-size: 0.58rem;
   }
 
   .sidebar {
@@ -1330,7 +1380,7 @@ th {
   }
 }
 
-/* Mobile top brand — hidden on desktop */
+/* Mobile top brand — hidden on desktop (must stay BEFORE the mobile @media so it doesn't override) */
 .mobile-bar {
   display: none;
 }

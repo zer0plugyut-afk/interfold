@@ -7,12 +7,13 @@ import { Gauges } from "./components/Gauges";
 import { OperatorsTable } from "./components/OperatorsTable";
 import { TokenomicsPanel } from "./components/TokenomicsPanel";
 import { Sidebar } from "./components/Sidebar";
+import { SidebarFoldPriceWidget } from "./components/SidebarFoldPriceWidget";
 import { useBoardData } from "./hooks/useBoardData";
 import { useFoldPrice } from "./hooks/useFoldPrice";
 import { useTheme } from "./hooks/useTheme";
 import { formatPriceUsd } from "./lib/foldPrice";
 import { num } from "./lib/format";
-
+import { Moon, Sun } from "lucide-react";
 const TITLES = {
   operators: ["Operators", "Network-wide ciphernode set"],
   events: ["Events", "Decoded protocol logs"],
@@ -24,7 +25,7 @@ const TITLES = {
 export default function App() {
   const { data, error, loading } = useBoardData();
   const { priceUsd, change24h } = useFoldPrice();
-  const { toggle } = useTheme();
+  const { theme, toggle } = useTheme();
   const [panel, setPanel] = useState(() => {
     const hash = location.hash.replace("#", "");
     if (hash === "scope" || hash === "counts") return "operators";
@@ -75,9 +76,18 @@ export default function App() {
                 <strong>InterFold</strong>
               </div>
             </div>
-            <button type="button" className="theme-btn theme-btn--mobile" onClick={toggle}>
-              Theme
-            </button>
+            <div className="mobile-bar__actions">
+              <SidebarFoldPriceWidget compact />
+              <button
+                type="button"
+                className="theme-btn theme-btn--mobile"
+                onClick={toggle}
+                aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              >
+                {theme === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
+                <span>{theme === "dark" ? "Light" : "Dark"}</span>
+              </button>
+            </div>
           </div>
 
           <header className="top">

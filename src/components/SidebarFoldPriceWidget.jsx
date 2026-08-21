@@ -31,13 +31,17 @@ function SparkBars({ values, up }) {
 
 /**
  * Zama-style sidebar price widget: spot + 24h % + mini bar sparkline.
+ * @param {{ compact?: boolean }} props
  */
-export function SidebarFoldPriceWidget() {
+export function SidebarFoldPriceWidget({ compact = false }) {
   const { priceUsd, change24h, spark, loading } = useFoldPrice();
   const up = change24h == null || change24h >= 0;
 
   return (
-    <div className="fold-price-widget" title="FOLD · CoinGecko · 5m cache">
+    <div
+      className={`fold-price-widget${compact ? " fold-price-widget--compact" : ""}`}
+      title="FOLD · CoinGecko · 5m cache"
+    >
       <div className="fold-price-widget__head">
         <span className="fold-price-widget__ticker">FOLD</span>
         <span className={`fold-price-widget__pct ${up ? "is-up" : "is-down"}`}>
@@ -55,7 +59,7 @@ export function SidebarFoldPriceWidget() {
           <SparkBars values={spark} up={up} />
         )}
       </div>
-      <p className="fold-price-widget__src">7d · CoinGecko</p>
+      {compact ? null : <p className="fold-price-widget__src">7d · CoinGecko</p>}
     </div>
   );
 }
