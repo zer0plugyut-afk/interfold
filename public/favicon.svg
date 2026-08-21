@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="InterFold">
+  <title>InterFold</title>
+  <rect width="64" height="64" fill="#07141a"/>
+  <rect x="4" y="4" width="56" height="56" fill="none" stroke="#b6ff3b" stroke-width="2.25"/>
+  <g fill="#b6ff3b">
+    <!-- I -->
+    <rect x="15" y="16" width="8" height="32" rx="0.5"/>
+    <!-- F -->
+    <rect x="31" y="16" width="8" height="32" rx="0.5"/>
+    <rect x="31" y="16" width="20" height="8" rx="0.5"/>
+    <rect x="31" y="30" width="15" height="8" rx="0.5"/>
+  </g>
+</svg>
