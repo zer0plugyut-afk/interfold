@@ -19,7 +19,7 @@ const FILTERS = [
   { id: "all", label: "All events", contract: null },
   { id: "bonding", label: "Bonding", contract: "BondingRegistry" },
   { id: "registry", label: "Registry", contract: "CiphernodeRegistry" },
-  { id: "interfold", label: "Interfold", contract: "Interfold" },
+  { id: "interfold", label: "Interfold (E3)", contract: "Interfold" },
   { id: "slash", label: "Slashing", contract: "SlashingManager" },
 ];
 

@@ -32,7 +32,7 @@ export const CONTRACT_FILTER_META = [
   { id: "all", label: "All", Icon: LayoutGrid },
   { id: "BondingRegistry", label: "Bonding", Icon: Coins },
   { id: "CiphernodeRegistry", label: "Registry", Icon: Network },
-  { id: "Interfold", label: "Interfold", Icon: Hexagon },
+  { id: "Interfold", label: "Interfold (E3)", Icon: Hexagon },
   { id: "SlashingManager", label: "Slashing", Icon: ShieldAlert },
 ];
 

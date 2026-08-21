@@ -3,6 +3,7 @@ import { Bar, BarChart, ResponsiveContainer, Cell } from "recharts";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { formatPriceUsd } from "../lib/foldPrice";
 import { useFoldPrice } from "../hooks/useFoldPrice";
+import { FoldIcon } from "./FoldIcon";
 
 function formatPct(pct) {
   if (pct == null || !Number.isFinite(pct)) return "—";
@@ -43,7 +44,10 @@ export function SidebarFoldPriceWidget({ compact = false }) {
       title="FOLD · CoinGecko · 5m cache"
     >
       <div className="fold-price-widget__head">
-        <span className="fold-price-widget__ticker">FOLD</span>
+        <span className="fold-price-widget__ticker">
+          <FoldIcon size={compact ? 14 : 16} />
+          FOLD
+        </span>
         <span className={`fold-price-widget__pct ${up ? "is-up" : "is-down"}`}>
           {up ? <TrendingUp size={11} aria-hidden /> : <TrendingDown size={11} aria-hidden />}
           {loading && priceUsd == null ? "—" : formatPct(change24h)}

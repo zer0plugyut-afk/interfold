@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { useFoldPrice } from "../hooks/useFoldPrice";
 import { formatPriceUsd, formatUsd } from "../lib/foldPrice";
+import { FoldIcon } from "./FoldIcon";
 import {
   buildDailyUnlockSeries,
   buildMonthlyUnlockBars,
@@ -196,6 +197,7 @@ export function TokenomicsPanel() {
         <div className="tok-asof">
           <div>As of {nowLabel} UTC</div>
           <div className="tok-price">
+            <FoldIcon size={16} />
             FOLD {priceLoading && priceUsd == null ? "…" : formatPriceUsd(priceUsd)}
             {change24h != null ? (
               <span className={change24h >= 0 ? "tok-price--up" : "tok-price--down"}>
@@ -222,7 +224,9 @@ export function TokenomicsPanel() {
 
         <div className="tok-hero__mkt">
           <div className="tok-mkt-card">
-            <p className="tok-tile__label">Market cap</p>
+            <p className="tok-tile__label">
+              <FoldIcon size={14} /> Market cap
+            </p>
             <strong className="tok-mkt-card__value">
               {priceUsd != null
                 ? formatUsd(snap.circulating, priceUsd)
@@ -231,7 +235,9 @@ export function TokenomicsPanel() {
             <p className="tok-tile__hint">Circulating × spot (updates as unlocks land)</p>
           </div>
           <div className="tok-mkt-card">
-            <p className="tok-tile__label">FDV</p>
+            <p className="tok-tile__label">
+              <FoldIcon size={14} /> FDV
+            </p>
             <strong className="tok-mkt-card__value">
               {priceUsd != null ? formatUsd(snap.totalSupply, priceUsd) : "—"}
             </strong>

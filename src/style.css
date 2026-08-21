@@ -514,11 +514,41 @@ html[data-theme="light"] .dash-tab.is-active {
 }
 
 .fold-price-widget__ticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.fold-icon {
+  display: inline-block;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+  vertical-align: -0.15em;
+}
+
+.tok-tile__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tok-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.top__price {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .fold-price-widget__pct {
