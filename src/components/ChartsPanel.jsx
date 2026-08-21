@@ -228,13 +228,90 @@ function fmtTokenAmount(raw) {
   return { fold, amountLabel: formatFold(fold) };
 }
 
-function EventTooltip({ active, payload, label, colorMap }) {
+function weiToFold(raw) {
+  return asNum(raw) / 1e18;
+}
+
+function sumAmounts(list) {
+  if (!Array.isArray(list)) return 0;
+  return list.reduce((s, x) => s + asNum(x), 0);
+}
+
+const REWARD_AMOUNT_SERIES = [
+  {
+    key: "Distributed",
+    event: "RewardsDistributed",
+    amount: (a) => weiToFold(sumAmounts(a.amounts)),
+  },
+  {
+    key: "Credited",
+    event: "RewardCredited",
+    amount: (a) => weiToFold(a.amount),
+  },
+  {
+    key: "Claimed",
+    event: "RewardClaimed",
+    amount: (a) => weiToFold(a.amount),
+  },
+];
+
+const TREASURY_AMOUNT_SERIES = [
+  {
+    key: "Credited",
+    event: "TreasuryCredited",
+    amount: (a) => weiToFold(a.amount),
+  },
+  {
+    key: "Claimed",
+    event: "TreasuryClaimed",
+    amount: (a) => weiToFold(a.amount),
+  },
+];
+
+const FEE_COUNT_SERIES = [
+  { key: "Config", event: "FeeAssetConfigUpdated", amount: () => 1 },
+  { key: "Allowlist", event: "FeeTokenAllowed", amount: () => 1 },
+];
+
+/** Daily stacked series from Interfold events (amounts in FOLD, or counts). */
+export function buildDailySeries(timeline, seriesDefs) {
+  const byEvent = new Map(seriesDefs.map((s) => [s.event, s]));
+  const byDay = new Map();
+  let hits = 0;
+
+  for (const e of timeline || []) {
+    if (e.contract !== "Interfold") continue;
+    const def = byEvent.get(e.event);
+    if (!def) continue;
+    hits += 1;
+    const day = dayKey(e.blockTimestamp, e.blockNumber);
+    let row = byDay.get(day);
+    if (!row) {
+      row = { day, label: shortDay(day) };
+      for (const s of seriesDefs) row[s.key] = 0;
+      byDay.set(day, row);
+    }
+    row[def.key] = (row[def.key] || 0) + def.amount(e.args || {});
+  }
+
+  const data = [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
+  return {
+    data,
+    keys: seriesDefs.map((s) => s.key),
+    hasData: hits > 0,
+    eventNames: seriesDefs.map((s) => s.event),
+  };
+}
+
+function EventTooltip({ active, payload, label, colorMap, valueKind = "count" }) {
   if (!active || !payload?.length) return null;
   const items = payload
     .filter((p) => Number(p.value) > 0)
     .sort((a, b) => Number(b.value) - Number(a.value));
   if (!items.length) return null;
   const total = items.reduce((s, p) => s + Number(p.value), 0);
+  const fmt = (v) =>
+    valueKind === "fold" ? `${formatFold(Number(v))} FOLD` : String(v);
 
   return (
     <div className="chart-tooltip">
@@ -247,14 +324,204 @@ function EventTooltip({ active, payload, label, colorMap }) {
               style={{ background: colorMap[p.dataKey] || p.color }}
             />
             <span className="chart-tooltip__name">{p.dataKey}</span>
-            <span className="chart-tooltip__val mono">{p.value}</span>
+            <span className="chart-tooltip__val mono">{fmt(p.value)}</span>
           </li>
         ))}
       </ul>
       <p className="chart-tooltip__total">
-        Total <strong>{total}</strong>
+        Total <strong>{fmt(total)}</strong>
       </p>
     </div>
+  );
+}
+
+function ChartPlaceholder({ title, body, events }) {
+  return (
+    <div className="chart-placeholder" role="status">
+      <strong>{title}</strong>
+      <p>{body}</p>
+      {events?.length ? (
+        <p className="chart-placeholder__events mono">{events.join(" · ")}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function SeriesChart({
+  data,
+  keys,
+  style,
+  dark,
+  colorMap,
+  valueKind = "count",
+  height = 320,
+  gradPrefix = "if-amt",
+}) {
+  const tickFill = dark ? "#8eaa9a" : "#4d6a5a";
+  const gridStroke = dark ? "rgba(156, 220, 188, 0.18)" : "rgba(16, 48, 36, 0.12)";
+  const yFormatter =
+    valueKind === "fold"
+      ? (v) => (Number(v) >= 1000 ? formatFold(Number(v)) : Number(v).toFixed(2))
+      : undefined;
+
+  return (
+    <div className="charts-frame charts-frame--tvs charts-frame--compact">
+      <ResponsiveContainer width="100%" height={height}>
+        {style === "bar" ? (
+          <BarChart
+            data={data}
+            margin={{ top: 12, right: 12, left: 4, bottom: 4 }}
+            barCategoryGap="28%"
+            barGap={4}
+          >
+            <CartesianGrid stroke={gridStroke} strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: tickFill, fontSize: 11 }}
+              axisLine={{ stroke: gridStroke }}
+              tickLine={false}
+            />
+            <YAxis
+              allowDecimals={valueKind === "fold"}
+              tick={{ fill: tickFill, fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              width={valueKind === "fold" ? 56 : 36}
+              tickFormatter={yFormatter}
+            />
+            <Tooltip
+              content={<EventTooltip colorMap={colorMap} valueKind={valueKind} />}
+              cursor={{ fill: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }}
+            />
+            <Legend
+              verticalAlign="bottom"
+              height={32}
+              iconType="circle"
+              wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+              formatter={(value) => (
+                <span style={{ color: "var(--muted)" }}>{value}</span>
+              )}
+            />
+            {keys.map((k) => (
+              <Bar
+                key={k}
+                dataKey={k}
+                fill={colorMap[k]}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={40}
+              />
+            ))}
+          </BarChart>
+        ) : (
+          <AreaChart data={data} margin={{ top: 12, right: 12, left: 4, bottom: 4 }}>
+            <defs>
+              {keys.map((k) => {
+                const c = colorMap[k];
+                const id = `${gradPrefix}-${k.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+                return (
+                  <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={c} stopOpacity={dark ? 0.55 : 0.45} />
+                    <stop offset="72%" stopColor={c} stopOpacity={dark ? 0.12 : 0.1} />
+                    <stop offset="100%" stopColor={c} stopOpacity={0} />
+                  </linearGradient>
+                );
+              })}
+            </defs>
+            <CartesianGrid stroke={gridStroke} strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: tickFill, fontSize: 11 }}
+              axisLine={{ stroke: gridStroke }}
+              tickLine={false}
+            />
+            <YAxis
+              allowDecimals={valueKind === "fold"}
+              tick={{ fill: tickFill, fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              width={valueKind === "fold" ? 56 : 36}
+              tickFormatter={yFormatter}
+            />
+            <Tooltip
+              content={<EventTooltip colorMap={colorMap} valueKind={valueKind} />}
+              cursor={{
+                stroke: dark ? "rgba(182,255,59,0.35)" : "rgba(31,122,58,0.35)",
+                strokeWidth: 1,
+              }}
+            />
+            <Legend
+              verticalAlign="bottom"
+              height={32}
+              iconType="circle"
+              wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+              formatter={(value) => (
+                <span style={{ color: "var(--muted)" }}>{value}</span>
+              )}
+            />
+            {keys.map((k) => {
+              const gradId = `${gradPrefix}-${k.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+              return (
+                <Area
+                  key={k}
+                  type="monotone"
+                  dataKey={k}
+                  stackId="flow"
+                  stroke={colorMap[k]}
+                  strokeWidth={2.25}
+                  fill={`url(#${gradId})`}
+                  fillOpacity={1}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0, fill: colorMap[k] }}
+                  connectNulls
+                />
+              );
+            })}
+          </AreaChart>
+        )}
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function FlowChartBlock({
+  heading,
+  blurb,
+  emptyTitle,
+  emptyBody,
+  model,
+  style,
+  dark,
+  valueKind,
+  gradPrefix,
+}) {
+  const colorMap = useMemo(() => {
+    const map = {};
+    model.keys.forEach((k, i) => {
+      map[k] = colorFor(i, dark);
+    });
+    return map;
+  }, [model.keys, dark]);
+
+  return (
+    <section className="chart-section">
+      <div className="chart-section__head">
+        <h3>{heading}</h3>
+        <p>{blurb}</p>
+      </div>
+      {!model.hasData ? (
+        <ChartPlaceholder title={emptyTitle} body={emptyBody} events={model.eventNames} />
+      ) : (
+        <SeriesChart
+          data={model.data}
+          keys={model.keys}
+          style={style}
+          dark={dark}
+          colorMap={colorMap}
+          valueKind={valueKind}
+          gradPrefix={gradPrefix}
+        />
+      )}
+    </section>
   );
 }
 
@@ -278,6 +545,19 @@ export function ChartsPanel({ timeline, priceUsd }) {
   }, [keys, dark]);
 
   const fees = useMemo(() => buildFeeRewardStats(timeline), [timeline]);
+
+  const rewardFlow = useMemo(
+    () => buildDailySeries(timeline, REWARD_AMOUNT_SERIES),
+    [timeline]
+  );
+  const treasuryFlow = useMemo(
+    () => buildDailySeries(timeline, TREASURY_AMOUNT_SERIES),
+    [timeline]
+  );
+  const feeFlow = useMemo(
+    () => buildDailySeries(timeline, FEE_COUNT_SERIES),
+    [timeline]
+  );
 
   const boxes = [
     {
@@ -478,7 +758,6 @@ export function ChartsPanel({ timeline, priceUsd }) {
                     <span style={{ color: "var(--muted)" }}>{value}</span>
                   )}
                 />
-                {/* Zama TVS-style: gradient area under a bright stroke (stacked composition) */}
                 {keys.map((k) => {
                   const gradId = `if-grad-${k.replace(/[^a-zA-Z0-9_-]/g, "")}`;
                   return (
@@ -506,6 +785,42 @@ export function ChartsPanel({ timeline, priceUsd }) {
           </ResponsiveContainer>
         </div>
       )}
+
+      <div className="chart-sections">
+        <FlowChartBlock
+          heading="Reward flows"
+          blurb="Daily FOLD amounts from RewardsDistributed, RewardCredited, and RewardClaimed. Ready as soon as rewards start landing on-chain."
+          emptyTitle="No reward events yet"
+          emptyBody="When the protocol distributes or credits rewards, this chart will plot daily FOLD amounts automatically from indexed Interfold logs."
+          model={rewardFlow}
+          style={style}
+          dark={dark}
+          valueKind="fold"
+          gradPrefix="if-reward"
+        />
+        <FlowChartBlock
+          heading="Treasury flows"
+          blurb="Daily FOLD credited to and claimed from the treasury."
+          emptyTitle="No treasury events yet"
+          emptyBody="TreasuryCredited and TreasuryClaimed will appear here as amount series once those transactions fire."
+          model={treasuryFlow}
+          style={style}
+          dark={dark}
+          valueKind="fold"
+          gradPrefix="if-treasury"
+        />
+        <FlowChartBlock
+          heading="Fee config activity"
+          blurb="Count of fee asset config updates and allowlist changes over time."
+          emptyTitle="No fee config events yet"
+          emptyBody="FeeAssetConfigUpdated and FeeTokenAllowed will populate this chart when fee parameters change."
+          model={feeFlow}
+          style={style}
+          dark={dark}
+          valueKind="count"
+          gradPrefix="if-fee"
+        />
+      </div>
     </div>
   );
 }

@@ -138,8 +138,9 @@ export default function App() {
                 <div className="section-head">
                   <h2>Fees, rewards & activity</h2>
                   <p>
-                    Boxes tally Interfold fee/treasury/reward events (0 until they fire). Chart
-                    below toggles line / bar.
+                    Boxes tally Interfold fee/treasury/reward events. Activity chart below,
+                    then dedicated reward, treasury, and fee-config charts — placeholders
+                    until those on-chain events land.
                   </p>
                 </div>
                 <ChartsPanel timeline={data?.timeline || []} priceUsd={priceUsd} />

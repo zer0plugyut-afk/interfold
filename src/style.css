@@ -286,6 +286,68 @@ html[data-theme="light"] .dash-tab.is-active {
     var(--panel);
 }
 
+.charts-frame--compact {
+  min-height: 340px;
+}
+
+.chart-sections {
+  display: grid;
+  gap: 28px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.chart-section {
+  display: grid;
+  gap: 10px;
+}
+
+.chart-section__head h3 {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.chart-section__head p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+.chart-placeholder {
+  border: 1px dashed var(--line);
+  background: color-mix(in srgb, var(--panel-soft) 80%, transparent);
+  padding: 28px 20px;
+  display: grid;
+  gap: 8px;
+  min-height: 160px;
+  align-content: center;
+}
+
+.chart-placeholder strong {
+  font-family: var(--display);
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.chart-placeholder p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  max-width: 56ch;
+  line-height: 1.45;
+}
+
+.chart-placeholder__events {
+  margin-top: 4px !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted)) !important;
+}
+
 .charts-hint {
   margin: 0;
   font-size: 0.78rem;
