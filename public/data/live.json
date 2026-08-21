@@ -1,0 +1,22 @@
+{
+  "fetchedAt": "2026-08-21T08:34:11.017Z",
+  "latestBlock": 25802340,
+  "requestsPaused": true,
+  "activeE3Count": "0",
+  "numRegisteredOperators": "3",
+  "numActiveOperators": "3",
+  "numCiphernodes": "3",
+  "requiredCiphernodeBond": "32000.0",
+  "ticketPrice": "1000.0",
+  "minTicketBalance": "1",
+  "ciphernodeBondActiveBps": "8000",
+  "exitDelayDays": 30,
+  "totalCiphernodeBondLiability": "96000.0",
+  "foldTotalSupply": "1200000000.0",
+  "tfoldTotalSupply": "5000.0",
+  "tfoldUnderlying": "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
+  "activeBanCount": "0",
+  "slashProposals": "0",
+  "sortitionSubmissionWindow": "600",
+  "unreleasedCommitteeCount": "0"
+}

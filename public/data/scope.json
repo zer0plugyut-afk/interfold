@@ -1,0 +1,96 @@
+{
+  "buildableNow": [
+    {
+      "id": "operator-board",
+      "title": "Operator / bonding board",
+      "officialGap": "Official UI is a per-wallet setup guide, not a network table",
+      "dataReady": true,
+      "evidence": "3 operators enriched from chain"
+    },
+    {
+      "id": "bonded-tvl",
+      "title": "Bonded FOLD + ticket TVL gauges",
+      "officialGap": "No TVL / share-of-tickets metrics",
+      "dataReady": true,
+      "evidence": "96000.0 FOLD liability; 5000.0 tFOLD"
+    },
+    {
+      "id": "policy-status",
+      "title": "Network policy + pause status",
+      "officialGap": "Home shows Sepolia demo counters; weak mainnet policy panel",
+      "dataReady": true,
+      "evidence": "requestsPaused=true; bond=32000.0; tickets min=1"
+    },
+    {
+      "id": "event-timeline",
+      "title": "Bonding / registry event timeline",
+      "officialGap": "No historical event feed",
+      "dataReady": true,
+      "evidence": {
+        "bondingLogs": 38,
+        "registryLogs": 14,
+        "interfoldLogs": 23,
+        "slashLogs": 7
+      }
+    }
+  ],
+  "later": [
+    {
+      "id": "e3-explorer",
+      "title": "Full E3 lifecycle explorer",
+      "dataReady": false,
+      "evidence": {
+        "requestsPaused": true,
+        "interfoldEvents": {
+          "OwnershipTransferred": 2,
+          "MaxDurationSet": 1,
+          "CiphernodeRegistrySet": 1,
+          "BondingRegistrySet": 1,
+          "E3RefundManagerSet": 2,
+          "FeeAssetConfigUpdated": 2,
+          "TimeoutConfigUpdated": 1,
+          "RequestsPausedSet": 1,
+          "E3ProgramRegistered": 1,
+          "Initialized": 1,
+          "SlashingManagerSet": 1,
+          "MarkFailedGracePeriodSet": 1,
+          "FeeTokenAllowed": 1,
+          "CommitteeThresholdsUpdated": 1,
+          "ParamSetRegistered": 1,
+          "EncryptionSchemeEnabled": 1,
+          "PkVerifierSet": 1,
+          "CiphertextVerifierSet": 1
+        }
+      }
+    },
+    {
+      "id": "sortition-fairness",
+      "title": "Sortition fairness auditor",
+      "dataReady": false,
+      "evidence": {
+        "OwnershipTransferred": 2,
+        "SortitionSubmissionWindowSet": 1,
+        "AccusationVoteValiditySet": 1,
+        "Initialized": 1,
+        "InterfoldSet": 1,
+        "BondingRegistrySet": 1,
+        "RegistrySlashingManagerSet": 1,
+        "DkgFoldAttestationVerifierUpdated": 1,
+        "CiphernodeAdded": 3
+      }
+    },
+    {
+      "id": "slash-refund",
+      "title": "Slashing & refund explorer",
+      "dataReady": false,
+      "evidence": {
+        "RoleGranted": 2,
+        "RoleAdminChanged": 1,
+        "InterfoldUpdated": 1,
+        "BondingRegistryUpdated": 1,
+        "CiphernodeRegistryUpdated": 1,
+        "E3RefundManagerUpdated": 1
+      }
+    }
+  ]
+}

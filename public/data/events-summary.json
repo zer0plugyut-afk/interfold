@@ -1,0 +1,64 @@
+{
+  "bonding": {
+    "OwnershipTransferred": 2,
+    "BondingAssetConfigUpdated": 2,
+    "EligibilityConfigurationVersionUpdated": 4,
+    "RegistrySet": 1,
+    "SlashedFundsTreasurySet": 1,
+    "ConfigurationUpdated": 3,
+    "Initialized": 1,
+    "SlashingManagerAuthorizationUpdated": 1,
+    "SlashingManagerUpdated": 1,
+    "RewardDistributorUpdated": 2,
+    "BondedCheckpointsSet": 1,
+    "BondOwnerSet": 5,
+    "CiphernodeBondUpdated": 3,
+    "TicketBalanceUpdated": 5,
+    "OperatorActivationChanged": 3
+  },
+  "registry": {
+    "OwnershipTransferred": 2,
+    "SortitionSubmissionWindowSet": 1,
+    "AccusationVoteValiditySet": 1,
+    "Initialized": 1,
+    "InterfoldSet": 1,
+    "BondingRegistrySet": 1,
+    "RegistrySlashingManagerSet": 1,
+    "DkgFoldAttestationVerifierUpdated": 1,
+    "CiphernodeAdded": 3
+  },
+  "interfold": {
+    "OwnershipTransferred": 2,
+    "MaxDurationSet": 1,
+    "CiphernodeRegistrySet": 1,
+    "BondingRegistrySet": 1,
+    "E3RefundManagerSet": 2,
+    "FeeAssetConfigUpdated": 2,
+    "TimeoutConfigUpdated": 1,
+    "RequestsPausedSet": 1,
+    "E3ProgramRegistered": 1,
+    "Initialized": 1,
+    "SlashingManagerSet": 1,
+    "MarkFailedGracePeriodSet": 1,
+    "FeeTokenAllowed": 1,
+    "CommitteeThresholdsUpdated": 1,
+    "ParamSetRegistered": 1,
+    "EncryptionSchemeEnabled": 1,
+    "PkVerifierSet": 1,
+    "CiphertextVerifierSet": 1
+  },
+  "slashing": {
+    "RoleGranted": 2,
+    "RoleAdminChanged": 1,
+    "InterfoldUpdated": 1,
+    "BondingRegistryUpdated": 1,
+    "CiphernodeRegistryUpdated": 1,
+    "E3RefundManagerUpdated": 1
+  },
+  "totals": {
+    "bondingLogs": 38,
+    "registryLogs": 14,
+    "interfoldLogs": 23,
+    "slashLogs": 7
+  }
+}
