@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { Copy, Check, ExternalLink, X } from "lucide-react";
 import { etherscanAddress, etherscanTx, num, shortAddr } from "../lib/format";
 
-const PREVIEW_LEN = 96;
+const PREVIEW_LEN = 28;
 const HEX_ADDR = /^0x[a-fA-F0-9]{40}$/;
 const HEX_LONG = /^0x[a-fA-F0-9]{66,}$/;
 
@@ -59,39 +59,46 @@ function ArgValue({ value, sepolia }) {
 
   if (typeof value === "string" && HEX_ADDR.test(value)) {
     return (
-      <span className="drawer-arg__val drawer-arg__val--row">
-        <a className="addr" href={addrHref(value)} target="_blank" rel="noreferrer">
-          {shortAddr(value)}
-        </a>
-        <span className="drawer-arg__full mono">{value}</span>
-        <CopyBtn text={value} />
-      </span>
-    );
-  }
-
-  if (typeof value === "string" && (HEX_LONG.test(value) || value.length > PREVIEW_LEN)) {
-    return (
-      <span className="drawer-arg__val">
-        <code className="drawer-arg__blob mono">{text}</code>
-        <CopyBtn text={text} />
-      </span>
+      <div className="drawer-arg__val">
+        <div className="drawer-arg__addr">
+          <a className="addr" href={addrHref(value)} target="_blank" rel="noreferrer">
+            {shortAddr(value)}
+          </a>
+          <CopyBtn text={value} />
+        </div>
+        <code className="drawer-arg__blob mono">{value}</code>
+      </div>
     );
   }
 
   if (Array.isArray(value) || isPlainObject(value)) {
     return (
-      <span className="drawer-arg__val">
+      <div className="drawer-arg__val">
+        <div className="drawer-arg__tools">
+          <CopyBtn text={text} />
+        </div>
         <pre className="drawer-arg__json mono">{text}</pre>
-        <CopyBtn text={text} />
-      </span>
+      </div>
+    );
+  }
+
+  // Long hex, long decimals, or any long scalar — wrap inside the card
+  if (text.length > 28 || HEX_LONG.test(text)) {
+    return (
+      <div className="drawer-arg__val">
+        <div className="drawer-arg__tools">
+          <CopyBtn text={text} />
+        </div>
+        <code className="drawer-arg__blob mono">{text}</code>
+      </div>
     );
   }
 
   return (
-    <span className="drawer-arg__val drawer-arg__val--row">
-      <code className="mono">{text}</code>
+    <div className="drawer-arg__val drawer-arg__val--inline">
+      <code className="drawer-arg__short mono">{text}</code>
       <CopyBtn text={text} />
-    </span>
+    </div>
   );
 }
 
