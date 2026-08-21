@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { etherscanAddress, etherscanTx, num, shortAddr } from "../lib/format";
 import { searchAddressActivity } from "../lib/supabaseData";
+import { EventDetailDrawer } from "./EventDetailDrawer";
 import { FoldIcon } from "./FoldIcon";
-
 function normalizeQuery(raw) {
   const q = String(raw || "").trim();
   if (!q) return "";
@@ -93,10 +93,17 @@ export function AddressSearch({ boardData, onOpenResults, active }) {
 
 export function AddressSearchResults({ payload, onClose }) {
   const { query, operators, events, crispEvents } = payload || {};
+  const [selected, setSelected] = useState(null);
+  const [drawerNetwork, setDrawerNetwork] = useState("mainnet");
   const total =
     (operators?.length || 0) + (events?.length || 0) + (crispEvents?.length || 0);
 
   const title = useMemo(() => shortAddr(query), [query]);
+
+  const openEvent = (e, network) => {
+    setDrawerNetwork(network);
+    setSelected(e);
+  };
 
   return (
     <section className="panel is-active panel--fill search-results">
@@ -108,7 +115,7 @@ export function AddressSearchResults({ payload, onClose }) {
             <a className="addr" href={etherscanAddress(query)} target="_blank" rel="noreferrer">
               {title}
             </a>{" "}
-            across operators, mainnet events, and CRISP (Sepolia).
+            across operators, mainnet events, and CRISP (Sepolia). Click an event for full args.
           </p>
         </div>
         <button type="button" className="theme-btn" onClick={onClose}>
@@ -220,7 +227,18 @@ export function AddressSearchResults({ payload, onClose }) {
                   </thead>
                   <tbody>
                     {events.map((e) => (
-                      <tr key={`${e.txHash}-${e.logIndex}`}>
+                      <tr
+                        key={`${e.txHash}-${e.logIndex}`}
+                        className="events-table__row"
+                        tabIndex={0}
+                        onClick={() => openEvent(e, "mainnet")}
+                        onKeyDown={(ev) => {
+                          if (ev.key === "Enter" || ev.key === " ") {
+                            ev.preventDefault();
+                            openEvent(e, "mainnet");
+                          }
+                        }}
+                      >
                         <td className="mono search-table__contract">{e.contract}</td>
                         <td className="search-table__event">{e.event}</td>
                         <td className="mono">{num(e.blockNumber)}</td>
@@ -232,6 +250,7 @@ export function AddressSearchResults({ payload, onClose }) {
                             href={etherscanTx(e.txHash)}
                             target="_blank"
                             rel="noreferrer"
+                            onClick={(ev) => ev.stopPropagation()}
                           >
                             {shortAddr(e.txHash)}
                           </a>
@@ -243,21 +262,19 @@ export function AddressSearchResults({ payload, onClose }) {
               </div>
               <ul className="search-hit-list">
                 {events.map((e) => (
-                  <li key={`m-${e.txHash}-${e.logIndex}`} className="search-hit">
-                    <div className="search-hit__top">
-                      <span className="search-hit__contract mono">{e.contract}</span>
-                      <span className="search-hit__block mono">#{num(e.blockNumber)}</span>
-                    </div>
-                    <strong className="search-hit__event">{e.event}</strong>
-                    <p className="search-hit__args mono">{summarizeArgs(e.args)}</p>
-                    <a
-                      className="addr"
-                      href={etherscanTx(e.txHash)}
-                      target="_blank"
-                      rel="noreferrer"
+                  <li key={`m-${e.txHash}-${e.logIndex}`}>
+                    <button
+                      type="button"
+                      className="search-hit search-hit--btn"
+                      onClick={() => openEvent(e, "mainnet")}
                     >
-                      Tx {shortAddr(e.txHash)}
-                    </a>
+                      <div className="search-hit__top">
+                        <span className="search-hit__contract mono">{e.contract}</span>
+                        <span className="search-hit__block mono">#{num(e.blockNumber)}</span>
+                      </div>
+                      <strong className="search-hit__event">{e.event}</strong>
+                      <p className="search-hit__args mono">{summarizeArgs(e.args)}</p>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -280,7 +297,18 @@ export function AddressSearchResults({ payload, onClose }) {
                   </thead>
                   <tbody>
                     {crispEvents.map((e) => (
-                      <tr key={`${e.txHash}-${e.logIndex}`}>
+                      <tr
+                        key={`${e.txHash}-${e.logIndex}`}
+                        className="events-table__row"
+                        tabIndex={0}
+                        onClick={() => openEvent(e, "sepolia")}
+                        onKeyDown={(ev) => {
+                          if (ev.key === "Enter" || ev.key === " ") {
+                            ev.preventDefault();
+                            openEvent(e, "sepolia");
+                          }
+                        }}
+                      >
                         <td className="mono search-table__contract">{e.contract}</td>
                         <td className="search-table__event">{e.event}</td>
                         <td className="mono">{num(e.blockNumber)}</td>
@@ -291,6 +319,7 @@ export function AddressSearchResults({ payload, onClose }) {
                             href={`https://sepolia.etherscan.io/tx/${e.txHash}`}
                             target="_blank"
                             rel="noreferrer"
+                            onClick={(ev) => ev.stopPropagation()}
                           >
                             {shortAddr(e.txHash)}
                           </a>
@@ -302,21 +331,19 @@ export function AddressSearchResults({ payload, onClose }) {
               </div>
               <ul className="search-hit-list">
                 {crispEvents.map((e) => (
-                  <li key={`m-${e.txHash}-${e.logIndex}`} className="search-hit">
-                    <div className="search-hit__top">
-                      <span className="search-hit__contract mono">{e.contract}</span>
-                      <span className="search-hit__block mono">#{num(e.blockNumber)}</span>
-                    </div>
-                    <strong className="search-hit__event">{e.event}</strong>
-                    <p className="search-hit__args mono">{summarizeArgs(e.args)}</p>
-                    <a
-                      className="addr"
-                      href={`https://sepolia.etherscan.io/tx/${e.txHash}`}
-                      target="_blank"
-                      rel="noreferrer"
+                  <li key={`m-${e.txHash}-${e.logIndex}`}>
+                    <button
+                      type="button"
+                      className="search-hit search-hit--btn"
+                      onClick={() => openEvent(e, "sepolia")}
                     >
-                      Tx {shortAddr(e.txHash)}
-                    </a>
+                      <div className="search-hit__top">
+                        <span className="search-hit__contract mono">{e.contract}</span>
+                        <span className="search-hit__block mono">#{num(e.blockNumber)}</span>
+                      </div>
+                      <strong className="search-hit__event">{e.event}</strong>
+                      <p className="search-hit__args mono">{summarizeArgs(e.args)}</p>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -324,6 +351,12 @@ export function AddressSearchResults({ payload, onClose }) {
           ) : null}
         </div>
       )}
+
+      <EventDetailDrawer
+        event={selected}
+        onClose={() => setSelected(null)}
+        network={drawerNetwork}
+      />
     </section>
   );
 }

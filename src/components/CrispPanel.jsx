@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CRISP_FILTER_META } from "../lib/icons";
 import { etherscanTx, num, shortAddr } from "../lib/format";
+import { EventDetailDrawer } from "./EventDetailDrawer";
 
 const PAGE_SIZE = 40;
 
@@ -36,31 +37,45 @@ function sepoliaTx(hash) {
   return `https://sepolia.etherscan.io/tx/${hash}`;
 }
 
-function EventCards({ rows, showContract, txHref }) {
+function rowKey(e) {
+  return `${e.txHash}-${e.logIndex}`;
+}
+
+function EventCards({ rows, showContract, txHref, onSelect, selectedKey }) {
   return (
     <ul className="event-cards">
-      {rows.map((e) => (
-        <li key={`${e.txHash}-${e.logIndex}`} className="event-card">
-          <div className="event-card__top">
-            {showContract ? (
-              <span className="event-card__contract mono">{e.contract}</span>
-            ) : null}
-            <span className="event-card__meta mono">
-              #{num(e.blockNumber)} · {formatWhenShort(e.blockTimestamp)}
-            </span>
-          </div>
-          <strong className="event-card__event">{e.event}</strong>
-          <p className="event-card__args mono">{summarizeArgs(e.args)}</p>
-          <a
-            className="event-card__tx addr"
-            href={txHref(e.txHash)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Tx {shortAddr(e.txHash)}
-          </a>
-        </li>
-      ))}
+      {rows.map((e) => {
+        const key = rowKey(e);
+        return (
+          <li key={key}>
+            <button
+              type="button"
+              className={`event-card event-card--btn${selectedKey === key ? " is-selected" : ""}`}
+              onClick={() => onSelect(e)}
+            >
+              <div className="event-card__top">
+                {showContract ? (
+                  <span className="event-card__contract mono">{e.contract}</span>
+                ) : null}
+                <span className="event-card__meta mono">
+                  #{num(e.blockNumber)} · {formatWhenShort(e.blockTimestamp)}
+                </span>
+              </div>
+              <strong className="event-card__event">{e.event}</strong>
+              <p className="event-card__args mono">{summarizeArgs(e.args)}</p>
+              <a
+                className="event-card__tx addr"
+                href={txHref(e.txHash)}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(ev) => ev.stopPropagation()}
+              >
+                Tx {shortAddr(e.txHash)}
+              </a>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -97,6 +112,7 @@ function Pagination({ page, pageCount, total, pageSize, onPage }) {
 export function CrispPanel({ events, network }) {
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState(null);
   const list = events || [];
 
   const counts = useMemo(() => {
@@ -115,9 +131,11 @@ export function CrispPanel({ events, network }) {
   const showContract = filter === "all";
   const txHref = network === "mainnet" ? etherscanTx : sepoliaTx;
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const drawerNetwork = network === "mainnet" ? "mainnet" : "sepolia";
 
   useEffect(() => {
     setPage(0);
+    setSelected(null);
   }, [filter]);
 
   useEffect(() => {
@@ -131,8 +149,11 @@ export function CrispPanel({ events, network }) {
 
   const goPage = (p) => {
     setPage(p);
+    setSelected(null);
     document.querySelector(".workspace")?.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const selectedKey = selected ? rowKey(selected) : null;
 
   return (
     <div className="events-panel">
@@ -167,6 +188,7 @@ export function CrispPanel({ events, network }) {
         </div>
       ) : (
         <>
+          <p className="events-hint">Click a row for full decoded args.</p>
           <Pagination
             page={page}
             pageCount={pageCount}
@@ -187,31 +209,52 @@ export function CrispPanel({ events, network }) {
                 </tr>
               </thead>
               <tbody>
-                {pageRows.map((e) => (
-                  <tr key={`${e.txHash}-${e.logIndex}`}>
-                    {showContract ? (
-                      <td className="mono events-table__contract">{e.contract}</td>
-                    ) : null}
-                    <td className="mono">{num(e.blockNumber)}</td>
-                    <td className="events-table__event">{e.event}</td>
-                    <td className="events-table__args mono">{summarizeArgs(e.args)}</td>
-                    <td className="mono events-table__time">{formatWhen(e.blockTimestamp)}</td>
-                    <td>
-                      <a
-                        className="addr"
-                        href={txHref(e.txHash)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {shortAddr(e.txHash)}
-                      </a>
-                    </td>
-                  </tr>
-                ))}
+                {pageRows.map((e) => {
+                  const key = rowKey(e);
+                  return (
+                    <tr
+                      key={key}
+                      className={`events-table__row${selectedKey === key ? " is-selected" : ""}`}
+                      tabIndex={0}
+                      onClick={() => setSelected(e)}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") {
+                          ev.preventDefault();
+                          setSelected(e);
+                        }
+                      }}
+                    >
+                      {showContract ? (
+                        <td className="mono events-table__contract">{e.contract}</td>
+                      ) : null}
+                      <td className="mono">{num(e.blockNumber)}</td>
+                      <td className="events-table__event">{e.event}</td>
+                      <td className="events-table__args mono">{summarizeArgs(e.args)}</td>
+                      <td className="mono events-table__time">{formatWhen(e.blockTimestamp)}</td>
+                      <td>
+                        <a
+                          className="addr"
+                          href={txHref(e.txHash)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(ev) => ev.stopPropagation()}
+                        >
+                          {shortAddr(e.txHash)}
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          <EventCards rows={pageRows} showContract={showContract} txHref={txHref} />
+          <EventCards
+            rows={pageRows}
+            showContract={showContract}
+            txHref={txHref}
+            onSelect={setSelected}
+            selectedKey={selectedKey}
+          />
           <Pagination
             page={page}
             pageCount={pageCount}
@@ -221,6 +264,12 @@ export function CrispPanel({ events, network }) {
           />
         </>
       )}
+
+      <EventDetailDrawer
+        event={selected}
+        onClose={() => setSelected(null)}
+        network={drawerNetwork}
+      />
     </div>
   );
 }
