@@ -80,12 +80,12 @@ export default function App() {
               <SidebarFoldPriceWidget compact />
               <button
                 type="button"
-                className="theme-btn theme-btn--mobile"
+                className="theme-btn theme-btn--mobile theme-btn--icon"
                 onClick={toggle}
                 aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+                title={theme === "dark" ? "Light mode" : "Dark mode"}
               >
-                {theme === "dark" ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
-                <span>{theme === "dark" ? "Light" : "Dark"}</span>
+                {theme === "dark" ? <Sun size={18} aria-hidden /> : <Moon size={18} aria-hidden />}
               </button>
             </div>
           </div>
