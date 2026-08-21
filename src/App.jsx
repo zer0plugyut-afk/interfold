@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Banner } from "./components/Banner";
 import { ChartsPanel } from "./components/ChartsPanel";
-import { CrispPanel } from "./components/CrispPanel";
+import { DappsPanel } from "./components/DappsPanel";
+import { AddressSearch, AddressSearchResults } from "./components/AddressSearch";
 import { EventTimeline } from "./components/EventTimeline";
 import { Gauges } from "./components/Gauges";
 import { OperatorsTable } from "./components/OperatorsTable";
@@ -11,40 +12,75 @@ import { SidebarFoldPriceWidget } from "./components/SidebarFoldPriceWidget";
 import { useBoardData } from "./hooks/useBoardData";
 import { useFoldPrice } from "./hooks/useFoldPrice";
 import { useTheme } from "./hooks/useTheme";
+import { getDapp } from "./lib/dapps";
 import { formatPriceUsd } from "./lib/foldPrice";
 import { num } from "./lib/format";
 import { Moon, Sun } from "lucide-react";
+
 const TITLES = {
   operators: ["Operators", "Network-wide ciphernode set"],
   events: ["Events", "Decoded protocol logs"],
   charts: ["Charts", "Fees, rewards & activity"],
   tokenomics: ["Tokenomics", "FOLD supply & unlock schedule"],
-  crisp: ["CRISP", "Encrypted ballot (Sepolia today)"],
+  apps: ["DApps", "Applications on InterFold"],
+  search: ["Search", "Address activity"],
 };
+
+function parseHash() {
+  const raw = location.hash.replace(/^#/, "");
+  if (!raw || raw === "scope" || raw === "counts") {
+    return { panel: "operators", dappId: null };
+  }
+  if (raw === "crisp" || raw === "apps/crisp") {
+    return { panel: "apps", dappId: "crisp" };
+  }
+  if (raw.startsWith("apps/")) {
+    const id = raw.slice(5);
+    return { panel: "apps", dappId: getDapp(id) ? id : null };
+  }
+  if (TITLES[raw]) return { panel: raw, dappId: null };
+  return { panel: "operators", dappId: null };
+}
 
 export default function App() {
   const { data, error, loading } = useBoardData();
   const { priceUsd, change24h } = useFoldPrice();
   const { theme, toggle } = useTheme();
-  const [panel, setPanel] = useState(() => {
-    const hash = location.hash.replace("#", "");
-    if (hash === "scope" || hash === "counts") return "operators";
-    return TITLES[hash] ? hash : "operators";
-  });
+  const initial = parseHash();
+  const [panel, setPanel] = useState(initial.panel);
+  const [dappId, setDappId] = useState(initial.dappId);
   const [eventFilter, setEventFilter] = useState("all");
+  const [searchPayload, setSearchPayload] = useState(null);
 
   useEffect(() => {
-    history.replaceState(null, "", `#${panel}`);
-  }, [panel]);
+    if (panel === "apps" && dappId) {
+      history.replaceState(null, "", `#apps/${dappId}`);
+    } else if (panel === "search") {
+      history.replaceState(null, "", "#search");
+    } else {
+      history.replaceState(null, "", `#${panel}`);
+    }
+  }, [panel, dappId]);
 
   const counts = useMemo(
     () => ({
       operators: data?.operators?.length ?? 0,
       events: data?.timeline?.length ?? 0,
-      crisp: data?.crisp?.events?.length ?? 0,
     }),
     [data]
   );
+
+  const navigate = (id) => {
+    setSearchPayload(null);
+    setDappId(null);
+    setPanel(id);
+  };
+
+  const openSearch = (payload) => {
+    setSearchPayload(payload);
+    setPanel("search");
+    setDappId(null);
+  };
 
   if (loading && !data) {
     return <div className="empty" style={{ margin: 24 }}>Loading board…</div>;
@@ -54,15 +90,19 @@ export default function App() {
     return <div className="empty" style={{ margin: 24 }}>Failed to load: {error}</div>;
   }
 
-  const [title, kicker] = TITLES[panel] || TITLES.operators;
+  const dapp = dappId ? getDapp(dappId) : null;
+  const [title, kicker] =
+    panel === "apps" && dapp
+      ? [dapp.name, dapp.tagline]
+      : TITLES[panel] || TITLES.operators;
 
   return (
     <>
       <div className="bg" />
       <div className="shell">
         <Sidebar
-          panel={panel}
-          onNavigate={setPanel}
+          panel={panel === "search" ? "" : panel}
+          onNavigate={navigate}
           counts={counts}
           onToggleTheme={toggle}
         />
@@ -97,6 +137,11 @@ export default function App() {
             </div>
             <div className="top__meta">
               <div className="top__badge">Community analytics layer</div>
+              <AddressSearch
+                boardData={data}
+                onOpenResults={openSearch}
+                active={panel === "search"}
+              />
               <div className="top__price" title="CoinGecko">
                 <img className="fold-icon" src="/fold.jpg" alt="" width={14} height={14} />
                 FOLD {formatPriceUsd(priceUsd)}
@@ -124,7 +169,8 @@ export default function App() {
             className={`main-panel ${
               panel === "events" ||
               panel === "charts" ||
-              panel === "crisp" ||
+              panel === "apps" ||
+              panel === "search" ||
               panel === "tokenomics"
                 ? "main-panel--fill"
                 : ""
@@ -177,22 +223,26 @@ export default function App() {
               </section>
             )}
 
-            {panel === "crisp" && (
+            {panel === "apps" && (
               <section className="panel is-active panel--fill">
-                <div className="section-head">
-                  <h2>CRISP ballots</h2>
-                  <p>
-                    Encrypted ballot program on{" "}
-                    <span className="hint">{data?.crisp?.network || "sepolia"}</span>. Indexed via{" "}
-                    <span className="hint">crisp.js</span>.
-                  </p>
-                </div>
-                <CrispPanel
-                  events={data?.crisp?.events || []}
-                  network={data?.crisp?.network || "sepolia"}
+                <DappsPanel
+                  dappId={dappId}
+                  onSelectDapp={setDappId}
+                  crispEvents={data?.crisp?.events || []}
+                  crispNetwork={data?.crisp?.network || "sepolia"}
                 />
               </section>
             )}
+
+            {panel === "search" && searchPayload ? (
+              <AddressSearchResults
+                payload={searchPayload}
+                onClose={() => {
+                  setSearchPayload(null);
+                  setPanel("operators");
+                }}
+              />
+            ) : null}
           </main>
         </div>
       </div>

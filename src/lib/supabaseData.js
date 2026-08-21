@@ -184,3 +184,84 @@ export function subscribeRealtime(onChange) {
     supabase.removeChannel(channel);
   };
 }
+
+function argsMentionAddress(args, needle) {
+  if (!args) return false;
+  const n = needle.toLowerCase();
+  try {
+    return JSON.stringify(args).toLowerCase().includes(n);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Search operators + mainnet events + CRISP events for an address (partial OK).
+ */
+export async function searchAddressActivity(rawQuery, boardData) {
+  const q = String(rawQuery || "").trim().toLowerCase();
+  if (!q.startsWith("0x") || q.length < 8) {
+    throw new Error("Enter a 0x address");
+  }
+
+  const localOps = (boardData?.operators || []).filter(
+    (o) =>
+      String(o.address || "")
+        .toLowerCase()
+        .includes(q) ||
+      String(o.bondOwner || "")
+        .toLowerCase()
+        .includes(q)
+  );
+  const localEvents = (boardData?.timeline || []).filter((e) => argsMentionAddress(e.args, q));
+  const localCrisp = (boardData?.crisp?.events || []).filter((e) =>
+    argsMentionAddress(e.args, q)
+  );
+
+  if (!supabaseConfigured || !supabase) {
+    return { operators: localOps, events: localEvents, crispEvents: localCrisp };
+  }
+
+  const [opsRes, eventsRes, crispRes] = await Promise.all([
+    supabase
+      .from("if_operators")
+      .select("*")
+      .or(`address.ilike.%${q}%,bond_owner.ilike.%${q}%`)
+      .limit(50),
+    supabase
+      .from("if_events")
+      .select("*")
+      .order("block_number", { ascending: false })
+      .limit(800),
+    supabase
+      .from("if_crisp_sepolia_events")
+      .select("*")
+      .order("block_number", { ascending: false })
+      .limit(500),
+  ]);
+
+  const operators = opsRes.error
+    ? localOps
+    : (opsRes.data || []).map(mapOperator);
+
+  const events = eventsRes.error
+    ? localEvents
+    : (eventsRes.data || [])
+        .filter((e) => argsMentionAddress(e.args, q))
+        .slice(0, 100)
+        .map(mapEvent);
+
+  const crispEvents = crispRes.error
+    ? localCrisp
+    : (crispRes.data || [])
+        .filter((e) => argsMentionAddress(e.args, q))
+        .slice(0, 100)
+        .map(mapCrispEvent);
+
+  // Prefer DB hits; fall back to local if empty
+  return {
+    operators: operators.length ? operators : localOps,
+    events: events.length ? events : localEvents,
+    crispEvents: crispEvents.length ? crispEvents : localCrisp,
+  };
+}

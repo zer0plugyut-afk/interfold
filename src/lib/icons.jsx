@@ -8,6 +8,7 @@ import {
   BarChart3,
   Vote,
   PieChart,
+  AppWindow,
 } from "lucide-react";
 
 export const NAV_ICONS = {
@@ -15,7 +16,7 @@ export const NAV_ICONS = {
   events: Activity,
   charts: BarChart3,
   tokenomics: PieChart,
-  crisp: Vote,
+  apps: AppWindow,
 };
 
 export const CONTRACT_ICONS = {

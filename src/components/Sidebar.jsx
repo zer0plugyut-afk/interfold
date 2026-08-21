@@ -1,4 +1,5 @@
 import { NAV_ICONS } from "../lib/icons";
+import { DAPPS } from "../lib/dapps";
 import { SidebarFoldPriceWidget } from "./SidebarFoldPriceWidget";
 
 export function Sidebar({ panel, onNavigate, counts, onToggleTheme }) {
@@ -7,7 +8,7 @@ export function Sidebar({ panel, onNavigate, counts, onToggleTheme }) {
     { id: "events", label: "Events", count: counts.events },
     { id: "charts", label: "Charts", count: null },
     { id: "tokenomics", label: "Tokenomics", count: null },
-    { id: "crisp", label: "CRISP", count: counts.crisp, tag: "Sepolia" },
+    { id: "apps", label: "DApps", count: DAPPS.length },
   ];
 
   return (
@@ -40,7 +41,6 @@ export function Sidebar({ panel, onNavigate, counts, onToggleTheme }) {
               />
               <span className="nav-btn__label">
                 <span className="nav-btn__title">{item.label}</span>
-                {item.tag ? <span className="nav-btn__tag">{item.tag}</span> : null}
                 {item.count != null ? <span className="nav-btn__count">{item.count}</span> : null}
               </span>
             </button>

@@ -643,6 +643,203 @@ html[data-theme="light"] .dash-tab.is-active {
   color: var(--muted);
   font-size: 0.75rem;
   line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.addr-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: min(280px, 72vw);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 4px 6px 4px 8px;
+}
+
+.addr-search.is-active {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.addr-search__icon {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.addr-search__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  outline: none;
+}
+
+.addr-search__input::placeholder {
+  color: var(--muted);
+}
+
+.addr-search__clear {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 2px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.addr-search__go {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.addr-search__go:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.addr-search__err {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  font-size: 0.65rem;
+  color: var(--bad);
+  text-align: left;
+  z-index: 2;
+}
+
+.dapps-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.dapps-back {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+}
+
+.dapps-back:hover {
+  color: var(--accent);
+}
+
+.dapp-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.dapp-card {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 14px;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 12px;
+  color: inherit;
+  font: inherit;
+}
+
+.dapp-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+
+.dapp-card__logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+.dapp-card__logo--fallback {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+  color: var(--accent);
+}
+
+.dapp-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dapp-card__row strong {
+  font-family: var(--display);
+  font-size: 1.05rem;
+}
+
+.dapp-card__net {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  padding: 2px 6px;
+}
+
+.dapp-card__tagline {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.dapp-card__desc {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.search-results__sum {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.search-results__cols {
+  display: grid;
+  gap: 18px;
+}
+
+.search-block h3 {
+  margin: 0 0 8px;
+  font-family: var(--display);
+  font-size: 0.95rem;
 }
 
 .top__badge {
@@ -650,7 +847,7 @@ html[data-theme="light"] .dash-tab.is-active {
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
 .main-panel {
@@ -1251,15 +1448,23 @@ th {
   .top__meta {
     text-align: left;
     width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
     font-size: 0.7rem;
   }
 
   .top__badge {
-    grid-column: 1 / -1;
     margin-bottom: 0;
+  }
+
+  .addr-search {
+    width: 100%;
+  }
+
+  .top__price {
+    order: -1;
   }
 
   .banner {
