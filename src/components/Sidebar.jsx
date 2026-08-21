@@ -30,11 +30,13 @@ export function Sidebar({ panel, onNavigate, counts, onToggleTheme }) {
               type="button"
               className={`nav-btn nav-btn--icon ${active ? "is-active" : ""}`}
               onClick={() => onNavigate(item.id)}
+              aria-current={active ? "page" : undefined}
             >
               <Icon
                 className={`nav-icon-svg ${active ? "is-active" : ""}`}
                 size={40}
                 strokeWidth={1.6}
+                aria-hidden
               />
               <span className="nav-btn__label">
                 <span className="nav-btn__title">{item.label}</span>

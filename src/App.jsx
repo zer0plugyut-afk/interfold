@@ -67,6 +67,19 @@ export default function App() {
         />
 
         <div className="workspace">
+          <div className="mobile-bar">
+            <div className="mobile-bar__brand">
+              <span className="brand__mark brand__mark--sm">IF</span>
+              <div>
+                <p className="brand__kicker">Community board</p>
+                <strong>InterFold</strong>
+              </div>
+            </div>
+            <button type="button" className="theme-btn theme-btn--mobile" onClick={toggle}>
+              Theme
+            </button>
+          </div>
+
           <header className="top">
             <div>
               <p className="brand__kicker">{kicker}</p>

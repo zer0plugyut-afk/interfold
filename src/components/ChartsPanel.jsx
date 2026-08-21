@@ -48,6 +48,20 @@ function shortDay(isoDay) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
+function useIsNarrow(maxWidth = 900) {
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(`(max-width: ${maxWidth}px)`).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${maxWidth}px)`);
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, [maxWidth]);
+  return narrow;
+}
+
 function useIsDarkTheme() {
   const [dark, setDark] = useState(
     () => document.documentElement.getAttribute("data-theme") !== "light"
@@ -493,6 +507,7 @@ function FlowChartBlock({
   dark,
   valueKind,
   gradPrefix,
+  height,
 }) {
   const colorMap = useMemo(() => {
     const map = {};
@@ -519,6 +534,7 @@ function FlowChartBlock({
           colorMap={colorMap}
           valueKind={valueKind}
           gradPrefix={gradPrefix}
+          height={height}
         />
       )}
     </section>
@@ -529,6 +545,9 @@ export function ChartsPanel({ timeline, priceUsd }) {
   const [style, setStyle] = useState("bar");
   const [filterId, setFilterId] = useState("all");
   const dark = useIsDarkTheme();
+  const narrow = useIsNarrow(900);
+  const activityHeight = narrow ? 300 : 520;
+  const flowHeight = narrow ? 240 : 320;
   const filter = FILTERS.find((f) => f.id === filterId) || FILTERS[0];
 
   const { data, keys, mode } = useMemo(
@@ -666,7 +685,7 @@ export function ChartsPanel({ timeline, priceUsd }) {
         <div className="empty">No event series yet.</div>
       ) : (
         <div className="charts-frame charts-frame--tvs">
-          <ResponsiveContainer width="100%" height={520}>
+          <ResponsiveContainer width="100%" height={activityHeight}>
             {style === "bar" ? (
               <BarChart
                 data={data}
@@ -797,6 +816,7 @@ export function ChartsPanel({ timeline, priceUsd }) {
           dark={dark}
           valueKind="fold"
           gradPrefix="if-reward"
+          height={flowHeight}
         />
         <FlowChartBlock
           heading="Treasury flows"
@@ -808,6 +828,7 @@ export function ChartsPanel({ timeline, priceUsd }) {
           dark={dark}
           valueKind="fold"
           gradPrefix="if-treasury"
+          height={flowHeight}
         />
         <FlowChartBlock
           heading="Fee config activity"
@@ -819,6 +840,7 @@ export function ChartsPanel({ timeline, priceUsd }) {
           dark={dark}
           valueKind="count"
           gradPrefix="if-fee"
+          height={flowHeight}
         />
       </div>
     </div>

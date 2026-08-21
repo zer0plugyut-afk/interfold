@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -28,6 +28,19 @@ import {
   unlockPerDay,
 } from "../lib/foldTokenomics";
 
+function useIsNarrow(maxWidth = 900) {
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(`(max-width: ${maxWidth}px)`).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${maxWidth}px)`);
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, [maxWidth]);
+  return narrow;
+}
 function AllocationBottle({ rows, activeId, onActiveIdChange, priceUsd }) {
   const [local, setLocal] = useState(null);
   const active = onActiveIdChange ? activeId : local;
@@ -133,6 +146,8 @@ export function TokenomicsPanel() {
   const [activeId, setActiveId] = useState(null);
   const [chartMode, setChartMode] = useState("cumulative");
   const { priceUsd, change24h, loading: priceLoading } = useFoldPrice();
+  const narrow = useIsNarrow(900);
+  const chartHeight = narrow ? 260 : 360;
 
   const perDay = unlockPerDay(asOf);
   const next7 = unlockInNextDays(7, asOf);
@@ -361,7 +376,7 @@ export function TokenomicsPanel() {
         </div>
 
         <div className="charts-frame charts-frame--tvs tok-chart">
-          <ResponsiveContainer width="100%" height={360}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
             {chartMode === "cumulative" ? (
               <AreaChart data={schedule} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
                 <defs>
