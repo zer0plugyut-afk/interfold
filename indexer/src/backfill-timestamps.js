@@ -6,7 +6,7 @@
  */
 import path from "path";
 import { fileURLToPath } from "url";
-import { createClient } from "@supabase/supabase-js";
+import { createIndexerClient } from "./supabase.js";
 import { JsonRpcProvider } from "ethers";
 import dotenv from "dotenv";
 
@@ -25,7 +25,7 @@ if (!url || !key || !rpc) {
   process.exit(1);
 }
 
-const sb = createClient(url, key, { auth: { persistSession: false } });
+const sb = createIndexerClient(url, key);
 const provider = new JsonRpcProvider(rpc, 1, { staticNetwork: true });
 
 async function main() {

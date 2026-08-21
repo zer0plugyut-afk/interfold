@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createClient } from "@supabase/supabase-js";
+import { createIndexerClient } from "./supabase.js";
 import { Contract, Interface, JsonRpcProvider, formatUnits, getAddress } from "ethers";
 import dotenv from "dotenv";
 import { CONTRACTS, TOKENS } from "./contracts.js";
@@ -451,7 +451,7 @@ async function main() {
   const key = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
   const rpc = resolveRpcUrl();
 
-  const sb = createClient(url, key, { auth: { persistSession: false } });
+  const sb = createIndexerClient(url, key);
   const provider = new JsonRpcProvider(rpc, 1, { staticNetwork: true });
 
   console.log("InterFold indexer starting");

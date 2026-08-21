@@ -1,6 +1,7 @@
-# Railway
+# Railway — Dockerfile uses Node 22; Nixpacks also pinned via engines/.nvmrc/nixpacks.toml
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "npm start"

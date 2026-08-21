@@ -4,7 +4,7 @@
  */
 import path from "path";
 import { fileURLToPath } from "url";
-import { createClient } from "@supabase/supabase-js";
+import { createIndexerClient } from "./supabase.js";
 import dotenv from "dotenv";
 import { CONTRACTS } from "./contracts.js";
 
@@ -18,7 +18,7 @@ if (!url || !key) {
   process.exit(1);
 }
 
-const sb = createClient(url, key, { auth: { persistSession: false } });
+const sb = createIndexerClient(url, key);
 
 async function main() {
   for (const c of Object.values(CONTRACTS)) {
