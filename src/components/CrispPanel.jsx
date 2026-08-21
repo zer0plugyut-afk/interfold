@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CRISP_FILTER_META } from "../lib/icons";
 import { etherscanTx, num, shortAddr } from "../lib/format";
+
+const PAGE_SIZE = 40;
 
 function summarizeArgs(args) {
   if (!args || typeof args !== "object") return "—";
@@ -63,17 +65,74 @@ function EventCards({ rows, showContract, txHref }) {
   );
 }
 
+function Pagination({ page, pageCount, total, pageSize, onPage }) {
+  if (pageCount <= 1) return null;
+  const from = page * pageSize + 1;
+  const to = Math.min(total, (page + 1) * pageSize);
+  return (
+    <div className="pager">
+      <button
+        type="button"
+        className="pager__btn"
+        disabled={page <= 0}
+        onClick={() => onPage(page - 1)}
+      >
+        Prev
+      </button>
+      <span className="pager__label mono">
+        {from}–{to} of {total}
+      </span>
+      <button
+        type="button"
+        className="pager__btn"
+        disabled={page >= pageCount - 1}
+        onClick={() => onPage(page + 1)}
+      >
+        Next
+      </button>
+    </div>
+  );
+}
+
 export function CrispPanel({ events, network }) {
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(0);
   const list = events || [];
-  const counts = { all: list.length };
-  for (const meta of CRISP_FILTER_META) {
-    if (meta.id === "all") continue;
-    counts[meta.id] = list.filter((e) => e.contract === meta.id).length;
-  }
-  const filtered = filter === "all" ? list : list.filter((e) => e.contract === filter);
+
+  const counts = useMemo(() => {
+    const c = { all: list.length };
+    for (const meta of CRISP_FILTER_META) {
+      if (meta.id === "all") continue;
+      c[meta.id] = list.filter((e) => e.contract === meta.id).length;
+    }
+    return c;
+  }, [list]);
+
+  const filtered = useMemo(
+    () => (filter === "all" ? list : list.filter((e) => e.contract === filter)),
+    [list, filter]
+  );
   const showContract = filter === "all";
   const txHref = network === "mainnet" ? etherscanTx : sepoliaTx;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(0);
+  }, [filter]);
+
+  useEffect(() => {
+    if (page > pageCount - 1) setPage(Math.max(0, pageCount - 1));
+  }, [page, pageCount]);
+
+  const pageRows = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
+
+  const goPage = (p) => {
+    setPage(p);
+    document.querySelector(".workspace")?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="events-panel">
@@ -108,6 +167,13 @@ export function CrispPanel({ events, network }) {
         </div>
       ) : (
         <>
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            total={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPage={goPage}
+          />
           <div className="table-wrap events-table-wrap events-desktop">
             <table className="events-table">
               <thead>
@@ -121,7 +187,7 @@ export function CrispPanel({ events, network }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((e) => (
+                {pageRows.map((e) => (
                   <tr key={`${e.txHash}-${e.logIndex}`}>
                     {showContract ? (
                       <td className="mono events-table__contract">{e.contract}</td>
@@ -145,7 +211,14 @@ export function CrispPanel({ events, network }) {
               </tbody>
             </table>
           </div>
-          <EventCards rows={filtered} showContract={showContract} txHref={txHref} />
+          <EventCards rows={pageRows} showContract={showContract} txHref={txHref} />
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            total={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPage={goPage}
+          />
         </>
       )}
     </div>

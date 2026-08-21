@@ -1,5 +1,8 @@
+import { useEffect, useMemo, useState } from "react";
 import { CONTRACT_FILTER_META } from "../lib/icons";
 import { etherscanTx, num, shortAddr } from "../lib/format";
+
+const PAGE_SIZE = 40;
 
 function summarizeArgs(args) {
   if (!args || typeof args !== "object") return "—";
@@ -56,15 +59,68 @@ function EventCards({ rows, showContract, txHref }) {
   );
 }
 
+function Pagination({ page, pageCount, total, pageSize, onPage }) {
+  if (pageCount <= 1) return null;
+  const from = page * pageSize + 1;
+  const to = Math.min(total, (page + 1) * pageSize);
+  return (
+    <div className="pager">
+      <button
+        type="button"
+        className="pager__btn"
+        disabled={page <= 0}
+        onClick={() => onPage(page - 1)}
+      >
+        Prev
+      </button>
+      <span className="pager__label mono">
+        {from}–{to} of {total}
+      </span>
+      <button
+        type="button"
+        className="pager__btn"
+        disabled={page >= pageCount - 1}
+        onClick={() => onPage(page + 1)}
+      >
+        Next
+      </button>
+    </div>
+  );
+}
+
 export function EventTimeline({ timeline, filter, onFilterChange }) {
+  const [page, setPage] = useState(0);
+
   const counts = { all: timeline.length };
   for (const meta of CONTRACT_FILTER_META) {
     if (meta.id === "all") continue;
     counts[meta.id] = timeline.filter((e) => e.contract === meta.id).length;
   }
 
-  const filtered = filter === "all" ? timeline : timeline.filter((e) => e.contract === filter);
+  const filtered = useMemo(
+    () => (filter === "all" ? timeline : timeline.filter((e) => e.contract === filter)),
+    [timeline, filter]
+  );
   const showContractCol = filter === "all";
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(0);
+  }, [filter]);
+
+  useEffect(() => {
+    if (page > pageCount - 1) setPage(Math.max(0, pageCount - 1));
+  }, [page, pageCount]);
+
+  const pageRows = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
+
+  const goPage = (p) => {
+    setPage(p);
+    document.querySelector(".workspace")?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="events-panel">
@@ -91,6 +147,13 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
         </div>
       ) : (
         <>
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            total={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPage={goPage}
+          />
           <div className="table-wrap events-table-wrap events-desktop">
             <table className="events-table">
               <thead>
@@ -104,7 +167,7 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((e) => (
+                {pageRows.map((e) => (
                   <tr key={`${e.txHash}-${e.logIndex}`}>
                     {showContractCol ? (
                       <td className="mono events-table__contract">{e.contract}</td>
@@ -128,7 +191,14 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
               </tbody>
             </table>
           </div>
-          <EventCards rows={filtered} showContract={showContractCol} txHref={etherscanTx} />
+          <EventCards rows={pageRows} showContract={showContractCol} txHref={etherscanTx} />
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            total={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPage={goPage}
+          />
         </>
       )}
     </div>
