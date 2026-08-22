@@ -6,13 +6,13 @@ export const DAPPS = [
     id: "crisp",
     name: "CRISP",
     tagline: "Encrypted ballots",
-    network: "sepolia",
-    networkLabel: "Sepolia",
+    network: "mainnet",
+    networkLabel: "Mainnet",
     status: "live",
     /** Optional logo under /public — add crisp.png when you have it */
     icon: "/crisp.png",
     description:
-      "Encrypted ballot program on InterFold. Live on Sepolia today; swap to mainnet when production CRISP ships.",
+      "Encrypted ballot program on InterFold. Live on Ethereum mainnet (CRISPProgram + SelfRegistry).",
   },
 ];
 

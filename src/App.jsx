@@ -232,7 +232,7 @@ export default function App() {
                   dappId={dappId}
                   onSelectDapp={setDappId}
                   crispEvents={data?.crisp?.events || []}
-                  crispNetwork={data?.crisp?.network || "sepolia"}
+                  crispNetwork={data?.crisp?.network || "mainnet"}
                 />
               </section>
             )}

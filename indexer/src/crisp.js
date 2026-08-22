@@ -1,10 +1,9 @@
 /**
  * CRISP (encrypted ballot) indexer — separate module.
- * Imported by index.js so `npm start` runs mainnet + CRISP together.
+ * Imported by index.js so `npm start` runs core mainnet + CRISP together.
  *
- * Today: Sepolia CRISPProgram (+ paired Sepolia Interfold for E3 lifecycle).
- * Later (mainnet): wipe Sepolia rows (005_wipe…sql), set CRISP_* env to mainnet,
- * restart — no code structure change required.
+ * Mainnet addresses come from indexer/crisp-mainnet.json (interfold PR 1870).
+ * After wiping Sepolia rows (005_wipe…sql), restart — cursors re-seed from deploy blocks.
  */
 import fs from "fs";
 import path from "path";
@@ -12,6 +11,10 @@ import { fileURLToPath } from "url";
 import { Interface, JsonRpcProvider } from "ethers";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const MAINNET = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "../crisp-mainnet.json"), "utf8")
+);
 
 function env(name, fallback = "") {
   return (process.env[name] || fallback).trim();
@@ -22,35 +25,38 @@ function bool(name, fallback = true) {
   return v === "1" || v === "true" || v === "yes";
 }
 
-/** All CRISP contract targets come from env — switch Sepolia → mainnet here. */
+/** All CRISP contract targets come from env, with mainnet JSON as the default. */
 export function getCrispConfig() {
   if (!bool("CRISP_ENABLED", true)) return null;
 
-  const network = env("CRISP_NETWORK", "sepolia");
-  const chainId = Number(env("CRISP_CHAIN_ID", network === "mainnet" ? "1" : "11155111"));
-  const rpcUrl =
-    env("CRISP_RPC_URL") ||
-    env("SEPOLIA_RPC_URL") ||
-    (chainId === 1 ? env("RPC_URL") : "");
+  const network = env("CRISP_NETWORK", MAINNET.network || "mainnet");
+  const chainId = Number(env("CRISP_CHAIN_ID", String(MAINNET.chainId || 1)));
+  const rpcUrl = env("CRISP_RPC_URL") || env("RPC_URL");
 
-  const programAddress = env(
-    "CRISP_PROGRAM_ADDRESS",
-    "0x8D9c914446451fdE7FC0fdBcF20573E878c3DE5a"
+  const programAddress = env("CRISP_PROGRAM_ADDRESS", MAINNET.CRISPProgram.address);
+  const programDeploy = Number(
+    env("CRISP_PROGRAM_DEPLOY_BLOCK", String(MAINNET.CRISPProgram.blockNumber))
   );
-  const programDeploy = Number(env("CRISP_PROGRAM_DEPLOY_BLOCK", "11508527"));
 
-  const interfoldAddress = env(
-    "CRISP_INTERFOLD_ADDRESS",
-    "0x38A8A686A420023568E995b57B4FBEA371555Ba7"
+  const interfoldAddress = env("CRISP_INTERFOLD_ADDRESS", MAINNET.Interfold.address);
+  const interfoldDeploy = Number(
+    env(
+      "CRISP_INTERFOLD_DEPLOY_BLOCK",
+      String(MAINNET.CRISPProgram.blockNumber)
+    )
   );
-  const interfoldDeploy = Number(env("CRISP_INTERFOLD_DEPLOY_BLOCK", "11508431"));
 
-  const eventsTable = env("CRISP_EVENTS_TABLE", "if_crisp_sepolia_events");
-  const syncTable = env("CRISP_SYNC_TABLE", "if_crisp_sepolia_sync_state");
+  const registryAddress = env("CRISP_SELF_REGISTRY_ADDRESS", MAINNET.SelfRegistry.address);
+  const registryDeploy = Number(
+    env("CRISP_SELF_REGISTRY_DEPLOY_BLOCK", String(MAINNET.SelfRegistry.blockNumber))
+  );
+
+  const eventsTable = env("CRISP_EVENTS_TABLE", "if_crisp_mainnet_events");
+  const syncTable = env("CRISP_SYNC_TABLE", "if_crisp_mainnet_sync_state");
   const chunk = Number(env("CRISP_LOG_CHUNK_SIZE", env("LOG_CHUNK_SIZE", "10000")));
 
   if (!rpcUrl) {
-    console.warn("[CRISP] skipped — set CRISP_RPC_URL (or SEPOLIA_RPC_URL)");
+    console.warn("[CRISP] skipped — set CRISP_RPC_URL (or RPC_URL)");
     return null;
   }
 
@@ -68,6 +74,13 @@ export function getCrispConfig() {
         address: programAddress,
         deployBlock: programDeploy,
         abiFile: "crisp-program.json",
+      },
+      {
+        key: "crisp_self_registry",
+        label: "SelfRegistry",
+        address: registryAddress,
+        deployBlock: registryDeploy,
+        abiFile: "self-registry.json",
       },
       {
         key: "crisp_interfold",

@@ -10,6 +10,8 @@
     "seed-json": "node src/seed-from-json.js",
     "backfill-timestamps": "node src/backfill-timestamps.js",
     "set-cursors": "node src/set-cursors-from-db.js",
+    "build-crisp-abi": "node src/build-crisp-abi.js",
+    "wipe-crisp": "node src/wipe-crisp-sepolia.js",
     "wipe-crisp-sepolia": "node src/wipe-crisp-sepolia.js"
   },
   "engines": {

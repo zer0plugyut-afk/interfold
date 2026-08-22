@@ -36,10 +36,10 @@ export function DappsPanel({ dappId, onSelectDapp, crispEvents, crispNetwork }) 
           <h2>CRISP</h2>
           <p>
             Encrypted ballot program on{" "}
-            <span className="hint">{crispNetwork || "sepolia"}</span>.
+            <span className="hint">{crispNetwork || "mainnet"}</span>.
           </p>
         </div>
-        <CrispPanel events={crispEvents || []} network={crispNetwork || "sepolia"} />
+        <CrispPanel events={crispEvents || []} network={crispNetwork || "mainnet"} />
       </div>
     );
   }

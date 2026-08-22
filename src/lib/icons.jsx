@@ -26,6 +26,7 @@ export const CONTRACT_ICONS = {
   Interfold: Hexagon,
   SlashingManager: ShieldAlert,
   CRISPProgram: Vote,
+  SelfRegistry: Network,
   "CRISP-Interfold": Hexagon,
 };
 
@@ -40,5 +41,6 @@ export const CONTRACT_FILTER_META = [
 export const CRISP_FILTER_META = [
   { id: "all", label: "All", Icon: LayoutGrid },
   { id: "CRISPProgram", label: "CRISP", Icon: Vote },
+  { id: "SelfRegistry", label: "Registry", Icon: Network },
   { id: "CRISP-Interfold", label: "Interfold", Icon: Hexagon },
 ];

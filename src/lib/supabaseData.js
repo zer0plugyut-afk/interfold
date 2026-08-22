@@ -20,8 +20,11 @@ const LABEL = {
 
 const CRISP_LABEL = {
   crisp_program: "CRISPProgram",
+  crisp_self_registry: "SelfRegistry",
   crisp_interfold: "CRISP-Interfold",
 };
+
+const CRISP_EVENTS_TABLE = "if_crisp_mainnet_events";
 
 function mapOperator(o) {
   return {
@@ -90,7 +93,7 @@ function mapCrispEvent(e) {
     txHash: e.tx_hash,
     blockTimestamp: e.block_timestamp || null,
     args: e.args || {},
-    network: e.network || "sepolia",
+    network: e.network || "mainnet",
     chainId: e.chain_id,
   };
 }
@@ -107,7 +110,7 @@ export async function loadFromSupabase() {
       .limit(200),
     supabase.from("if_event_counts").select("*"),
     supabase
-      .from("if_crisp_sepolia_events")
+      .from(CRISP_EVENTS_TABLE)
       .select("*")
       .order("block_number", { ascending: false })
       .order("log_index", { ascending: false })
@@ -117,7 +120,7 @@ export async function loadFromSupabase() {
   for (const r of [ops, stats, events, counts]) {
     if (r.error) throw r.error;
   }
-  // CRISP table may not exist until migration 004 — soft-fail
+  // CRISP table may not exist until 005 rename — soft-fail
   const crispEvents = crisp.error ? [] : (crisp.data || []).map(mapCrispEvent);
 
   const eventSummary = { bonding: {}, registry: {}, interfold: {}, slashing: {} };
@@ -139,7 +142,7 @@ export async function loadFromSupabase() {
     operators: (ops.data || []).map(mapOperator),
     timeline: (events.data || []).map(mapEvent),
     crisp: {
-      network: crispEvents[0]?.network || "sepolia",
+      network: crispEvents[0]?.network || "mainnet",
       events: crispEvents,
     },
     eventSummary,
@@ -160,7 +163,7 @@ export async function loadFromJson() {
   return {
     ...data,
     timeline,
-    crisp: data.crisp || { network: "sepolia", events: [] },
+    crisp: data.crisp || { network: "mainnet", events: [] },
     source: "json",
   };
 }
@@ -175,7 +178,7 @@ export function subscribeRealtime(onChange) {
     .on("postgres_changes", { event: "*", schema: "public", table: "if_event_counts" }, onChange)
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "if_crisp_sepolia_events" },
+      { event: "*", schema: "public", table: CRISP_EVENTS_TABLE },
       onChange
     )
     .subscribe();
@@ -234,7 +237,7 @@ export async function searchAddressActivity(rawQuery, boardData) {
       .order("block_number", { ascending: false })
       .limit(800),
     supabase
-      .from("if_crisp_sepolia_events")
+      .from(CRISP_EVENTS_TABLE)
       .select("*")
       .order("block_number", { ascending: false })
       .limit(500),

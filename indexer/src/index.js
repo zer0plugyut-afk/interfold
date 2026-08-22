@@ -435,7 +435,7 @@ async function syncOnce(sb, provider) {
   await refreshNetworkStats(sb, provider);
   await refreshOperators(sb, provider);
 
-  // CRISP is a separate module (crisp.js) — Sepolia today, env-switch to mainnet later
+  // CRISP is a separate module (crisp.js) — mainnet CRISPProgram from PR 1870
   let crispTotal = 0;
   try {
     crispTotal = await syncCrisp(sb);

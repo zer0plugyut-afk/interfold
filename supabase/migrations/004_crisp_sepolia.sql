@@ -1,7 +1,6 @@
--- CRISP (encrypted ballot) — currently Sepolia demo network
+-- CRISP (encrypted ballot) — original table create (Sepolia names).
 -- Run in Supabase SQL editor after 001/002/003.
--- When mainnet CRISP ships: run 005_wipe_crisp_sepolia_for_mainnet.sql
--- then point indexer env at mainnet addresses (see indexer/.env.example).
+-- Then run 005_wipe_crisp_sepolia_for_mainnet.sql to wipe and rename for mainnet.
 
 create table if not exists public.if_crisp_sepolia_sync_state (
   contract_key text primary key,

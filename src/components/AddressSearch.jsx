@@ -115,7 +115,7 @@ export function AddressSearchResults({ payload, onClose }) {
             <a className="addr" href={etherscanAddress(query)} target="_blank" rel="noreferrer">
               {title}
             </a>{" "}
-            across operators, mainnet events, and CRISP (Sepolia). Click an event for full args.
+            across operators, mainnet events, and CRISP. Click an event for full args.
           </p>
         </div>
         <button type="button" className="theme-btn" onClick={onClose}>
@@ -283,7 +283,7 @@ export function AddressSearchResults({ payload, onClose }) {
 
           {crispEvents?.length ? (
             <div className="search-block">
-              <h3>CRISP (Sepolia)</h3>
+              <h3>CRISP (Mainnet)</h3>
               <div className="search-table-wrap">
                 <table className="search-table">
                   <thead>
@@ -301,11 +301,11 @@ export function AddressSearchResults({ payload, onClose }) {
                         key={`${e.txHash}-${e.logIndex}`}
                         className="events-table__row"
                         tabIndex={0}
-                        onClick={() => openEvent(e, "sepolia")}
+                        onClick={() => openEvent(e, "mainnet")}
                         onKeyDown={(ev) => {
                           if (ev.key === "Enter" || ev.key === " ") {
                             ev.preventDefault();
-                            openEvent(e, "sepolia");
+                            openEvent(e, "mainnet");
                           }
                         }}
                       >
@@ -316,7 +316,7 @@ export function AddressSearchResults({ payload, onClose }) {
                         <td>
                           <a
                             className="addr"
-                            href={`https://sepolia.etherscan.io/tx/${e.txHash}`}
+                            href={etherscanTx(e.txHash)}
                             target="_blank"
                             rel="noreferrer"
                             onClick={(ev) => ev.stopPropagation()}
@@ -335,7 +335,7 @@ export function AddressSearchResults({ payload, onClose }) {
                     <button
                       type="button"
                       className="search-hit search-hit--btn"
-                      onClick={() => openEvent(e, "sepolia")}
+                      onClick={() => openEvent(e, "mainnet")}
                     >
                       <div className="search-hit__top">
                         <span className="search-hit__contract mono">{e.contract}</span>

@@ -129,9 +129,9 @@ export function CrispPanel({ events, network }) {
     [list, filter]
   );
   const showContract = filter === "all";
-  const txHref = network === "mainnet" ? etherscanTx : sepoliaTx;
+  const txHref = network === "sepolia" ? sepoliaTx : etherscanTx;
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const drawerNetwork = network === "mainnet" ? "mainnet" : "sepolia";
+  const drawerNetwork = network === "sepolia" ? "sepolia" : "mainnet";
 
   useEffect(() => {
     setPage(0);
@@ -158,10 +158,10 @@ export function CrispPanel({ events, network }) {
   return (
     <div className="events-panel">
       <div className="crisp-banner">
-        <strong>{network === "mainnet" ? "Mainnet" : "Sepolia"}</strong>
+        <strong>Mainnet</strong>
         <span>
-          Encrypted ballot (CRISP) demo data. When production CRISP ships on mainnet, wipe Sepolia
-          rows and point the indexer env at the new contract.
+          Encrypted ballot (CRISP) on Ethereum mainnet — CRISPProgram, SelfRegistry, and InterFold
+          E3 lifecycle from the CRISP deploy block.
         </span>
       </div>
 
@@ -184,7 +184,7 @@ export function CrispPanel({ events, network }) {
 
       {!filtered.length ? (
         <div className="empty" style={{ marginTop: 12 }}>
-          No CRISP events yet (indexer needs CRISP_RPC_URL + migration 004).
+          No CRISP events yet. Run SQL 005, then start the indexer against mainnet.
         </div>
       ) : (
         <>
