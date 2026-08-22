@@ -40,16 +40,30 @@ function rowKey(e) {
   return `${e.txHash}-${e.logIndex}`;
 }
 
+function isNewProgramEvent(e) {
+  return e?.event === "E3ProgramRegistered";
+}
+
+function EventName({ event, flagged }) {
+  return (
+    <>
+      {event}
+      {flagged ? <span className="event-flag">New program</span> : null}
+    </>
+  );
+}
+
 function EventCards({ rows, showContract, txHref, onSelect, selectedKey }) {
   return (
     <ul className="event-cards">
       {rows.map((e) => {
         const key = rowKey(e);
+        const flagged = isNewProgramEvent(e);
         return (
           <li key={key}>
             <button
               type="button"
-              className={`event-card event-card--btn${selectedKey === key ? " is-selected" : ""}`}
+              className={`event-card event-card--btn${selectedKey === key ? " is-selected" : ""}${flagged ? " is-new-program" : ""}`}
               onClick={() => onSelect(e)}
             >
               <div className="event-card__top">
@@ -60,7 +74,9 @@ function EventCards({ rows, showContract, txHref, onSelect, selectedKey }) {
                   #{num(e.blockNumber)} · {formatWhenShort(e.blockTimestamp)}
                 </span>
               </div>
-              <strong className="event-card__event">{e.event}</strong>
+              <strong className="event-card__event">
+                <EventName event={e.event} flagged={flagged} />
+              </strong>
               <p className="event-card__args mono">{summarizeArgs(e.args)}</p>
               <a
                 className="event-card__tx addr"
@@ -382,10 +398,11 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
               <tbody>
                 {pageRows.map((e) => {
                   const key = rowKey(e);
+                  const flagged = isNewProgramEvent(e);
                   return (
                     <tr
                       key={key}
-                      className={`events-table__row${selectedKey === key ? " is-selected" : ""}`}
+                      className={`events-table__row${selectedKey === key ? " is-selected" : ""}${flagged ? " is-new-program" : ""}`}
                       tabIndex={0}
                       onClick={() => setSelected(e)}
                       onKeyDown={(ev) => {
@@ -399,7 +416,9 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
                         <td className="mono events-table__contract">{e.contract}</td>
                       ) : null}
                       <td className="mono">{num(e.blockNumber)}</td>
-                      <td className="events-table__event">{e.event}</td>
+                      <td className="events-table__event">
+                        <EventName event={e.event} flagged={flagged} />
+                      </td>
                       <td className="events-table__args mono">{summarizeArgs(e.args)}</td>
                       <td className="mono events-table__time">{formatWhen(e.blockTimestamp)}</td>
                       <td>
