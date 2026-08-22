@@ -4,5 +4,6 @@ COPY package.json package-lock.json* ./
 RUN npm install --omit=dev
 COPY src ./src
 COPY abis ./abis
+COPY crisp-mainnet.json ./crisp-mainnet.json
 ENV NODE_ENV=production
 CMD ["npm", "start"]

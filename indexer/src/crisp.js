@@ -12,9 +12,36 @@ import { Interface, JsonRpcProvider } from "ethers";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const MAINNET = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "../crisp-mainnet.json"), "utf8")
-);
+/** Hardcoded fallback so Railway still boots if crisp-mainnet.json was not copied. */
+const MAINNET_DEFAULTS = {
+  network: "mainnet",
+  chainId: 1,
+  CRISPProgram: {
+    address: "0x847A22303639017bcDB7F7E49EEa4a4629c1169f",
+    blockNumber: 25812209,
+  },
+  SelfRegistry: {
+    address: "0x988104E6275359126bbDDDeE35159bd7d138A61C",
+    blockNumber: 25812212,
+  },
+  Interfold: {
+    address: "0x28cF63B459e6218C69EA97ea7D90541cf648c715",
+    blockNumber: 25786382,
+  },
+};
+
+function loadMainnetDefaults() {
+  const file = path.join(__dirname, "../crisp-mainnet.json");
+  try {
+    return { ...MAINNET_DEFAULTS, ...JSON.parse(fs.readFileSync(file, "utf8")) };
+  } catch (e) {
+    if (e.code !== "ENOENT") throw e;
+    console.warn("[CRISP] crisp-mainnet.json missing — using built-in mainnet addresses");
+    return MAINNET_DEFAULTS;
+  }
+}
+
+const MAINNET = loadMainnetDefaults();
 
 function env(name, fallback = "") {
   return (process.env[name] || fallback).trim();
