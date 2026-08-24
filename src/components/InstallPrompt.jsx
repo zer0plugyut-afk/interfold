@@ -3,58 +3,91 @@ import { X } from "lucide-react";
 import {
   closeInstall,
   getInstallPlatform,
-  installHintForPlatform,
   isDismissed,
-  isIosDevice,
   isStandaloneDisplay,
   snoozeInstall,
 } from "../lib/pwaInstall";
 
 /**
- * Install banner — native beforeinstallprompt when available,
- * otherwise a visible how-to so it still appears on phone/desktop.
+ * Same pattern as typical installable PWAs: only show when the browser
+ * handed us beforeinstallprompt — so Install actually works.
+ * Captures an early event stored on window by index.html.
  */
 export function InstallPrompt() {
   const [deferred, setDeferred] = useState(null);
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
   const platform = getInstallPlatform();
-  const canNativeInstall = Boolean(deferred);
 
   useEffect(() => {
     if (isStandaloneDisplay()) return undefined;
     if (isDismissed()) return undefined;
 
-    const onBip = (e) => {
-      e.preventDefault();
+    const takeEvent = (e) => {
+      if (!e) return;
+      try {
+        e.preventDefault();
+      } catch {
+        /* already prevented by early listener */
+      }
       setDeferred(e);
-      setVisible(true);
     };
 
-    window.addEventListener("beforeinstallprompt", onBip);
+    // Event may have fired before React mounted
+    if (window.__ifDeferredInstall) {
+      takeEvent(window.__ifDeferredInstall);
+      window.__ifDeferredInstall = null;
+    }
+
+    const onBip = (e) => {
+      takeEvent(e);
+      window.__ifDeferredInstall = null;
+    };
+
+    const onReady = () => {
+      if (window.__ifDeferredInstall) {
+        takeEvent(window.__ifDeferredInstall);
+        window.__ifDeferredInstall = null;
+      }
+    };
 
     const onInstalled = () => {
       setVisible(false);
       setDeferred(null);
+      window.__ifDeferredInstall = null;
       closeInstall();
     };
-    window.addEventListener("appinstalled", onInstalled);
 
-    // Always show after a short delay so users see the card even when
-    // Chromium has not fired beforeinstallprompt yet (or on iOS).
-    const timer = window.setTimeout(() => {
-      if (isDismissed() || isStandaloneDisplay()) return;
-      setVisible(true);
-    }, 2000);
+    window.addEventListener("beforeinstallprompt", onBip);
+    window.addEventListener("if-install-ready", onReady);
+    window.addEventListener("appinstalled", onInstalled);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBip);
+      window.removeEventListener("if-install-ready", onReady);
       window.removeEventListener("appinstalled", onInstalled);
-      clearTimeout(timer);
     };
   }, []);
 
-  if (!visible) return null;
+  // Show only once we have a real install prompt (hl.eco-style)
+  useEffect(() => {
+    if (!deferred || isDismissed() || isStandaloneDisplay()) return undefined;
+
+    const show = () => setVisible(true);
+    // Brief delay so it doesn't flash on first paint; also after light scroll
+    const timer = window.setTimeout(show, 1200);
+    const onScroll = () => {
+      if (window.scrollY >= 120) show();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [deferred]);
+
+  if (!visible || !deferred) return null;
 
   const hide = (ms) => {
     snoozeInstall(ms);
@@ -62,12 +95,12 @@ export function InstallPrompt() {
   };
 
   const onInstall = async () => {
-    if (!deferred) return;
     setBusy(true);
     try {
       await deferred.prompt();
       const choice = await deferred.userChoice;
       setDeferred(null);
+      window.__ifDeferredInstall = null;
       if (choice?.outcome === "accepted") {
         setVisible(false);
       } else {
@@ -79,11 +112,6 @@ export function InstallPrompt() {
       setBusy(false);
     }
   };
-
-  const title =
-    isIosDevice() && !canNativeInstall
-      ? "Add Interfold Board to your Home Screen"
-      : `Install Interfold Board as an app on your ${platform}`;
 
   return (
     <aside className="install-prompt" role="dialog" aria-label="Install Interfold Board">
@@ -108,21 +136,18 @@ export function InstallPrompt() {
           alt=""
         />
         <div className="install-prompt__body">
-          <p className="install-prompt__title">{title}</p>
-          {!canNativeInstall ? (
-            <p className="install-prompt__hint">{installHintForPlatform(platform)}</p>
-          ) : null}
+          <p className="install-prompt__title">
+            Install Interfold Board as an app on your {platform}
+          </p>
           <div className="install-prompt__actions">
-            {canNativeInstall ? (
-              <button
-                type="button"
-                className="install-prompt__install"
-                disabled={busy}
-                onClick={onInstall}
-              >
-                Install
-              </button>
-            ) : null}
+            <button
+              type="button"
+              className="install-prompt__install"
+              disabled={busy}
+              onClick={onInstall}
+            >
+              Install
+            </button>
             <button
               type="button"
               className="install-prompt__later"

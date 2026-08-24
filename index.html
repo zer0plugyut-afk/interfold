@@ -64,6 +64,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Capture install event early — it can fire before React mounts (esp. desktop). -->
+    <script>
+      window.__ifDeferredInstall = null;
+      window.addEventListener("beforeinstallprompt", function (e) {
+        e.preventDefault();
+        window.__ifDeferredInstall = e;
+        window.dispatchEvent(new Event("if-install-ready"));
+      });
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
