@@ -2,7 +2,7 @@ import { NAV_ICONS } from "../lib/icons";
 import { DAPPS } from "../lib/dapps";
 import { SidebarFoldPriceWidget } from "./SidebarFoldPriceWidget";
 
-export function Sidebar({ panel, onNavigate, counts, onToggleTheme }) {
+export function Sidebar({ panel, onNavigate, onGoHome, counts, onToggleTheme }) {
   const items = [
     { id: "operators", label: "Operators", count: counts.operators },
     { id: "events", label: "Events", count: counts.events },
@@ -13,13 +13,19 @@ export function Sidebar({ panel, onNavigate, counts, onToggleTheme }) {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar__brand">
-        <span className="brand__mark">IF</span>
-        <div>
+      <button
+        type="button"
+        className="sidebar__brand"
+        onClick={onGoHome}
+        aria-label="Back to Interfold Board landing"
+      >
+        <img className="brand__logo" src="/favicon.svg" width={42} height={42} alt="" />
+        <div className="sidebar__brand-text">
           <p className="brand__kicker">Community board</p>
-          <strong>InterFold</strong>
+          <strong>Interfold Board</strong>
+          <p className="brand__disclaimer">Not affiliated with the Interfold Foundation.</p>
         </div>
-      </div>
+      </button>
 
       <nav className="sidebar__nav" aria-label="Sections">
         {items.map((item) => {

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Banner } from "./components/Banner";
+import { BoardDisclaimer } from "./components/BoardDisclaimer";
 import { ChartsPanel } from "./components/ChartsPanel";
 import { DappsPanel } from "./components/DappsPanel";
 import { AddressSearch, AddressSearchResults } from "./components/AddressSearch";
 import { EventTimeline } from "./components/EventTimeline";
 import { Gauges } from "./components/Gauges";
+import { InstallPrompt } from "./components/InstallPrompt";
+import { LandingPage } from "./components/LandingPage";
 import { OperatorsTable } from "./components/OperatorsTable";
 import { TokenomicsPanel } from "./components/TokenomicsPanel";
 import { Sidebar } from "./components/Sidebar";
@@ -29,18 +32,18 @@ const TITLES = {
 
 function parseHash() {
   const raw = location.hash.replace(/^#/, "");
-  if (!raw || raw === "scope" || raw === "counts") {
-    return { panel: "operators", dappId: null };
+  if (!raw || raw === "home" || raw === "scope" || raw === "counts") {
+    return { view: "landing", panel: "operators", dappId: null };
   }
   if (raw === "crisp" || raw === "apps/crisp") {
-    return { panel: "apps", dappId: "crisp" };
+    return { view: "board", panel: "apps", dappId: "crisp" };
   }
   if (raw.startsWith("apps/")) {
     const id = raw.slice(5);
-    return { panel: "apps", dappId: getDapp(id) ? id : null };
+    return { view: "board", panel: "apps", dappId: getDapp(id) ? id : null };
   }
-  if (TITLES[raw]) return { panel: raw, dappId: null };
-  return { panel: "operators", dappId: null };
+  if (TITLES[raw]) return { view: "board", panel: raw, dappId: null };
+  return { view: "landing", panel: "operators", dappId: null };
 }
 
 export default function App() {
@@ -48,12 +51,17 @@ export default function App() {
   const { priceUsd, change24h } = useFoldPrice();
   const { theme, toggle } = useTheme();
   const initial = parseHash();
+  const [view, setView] = useState(initial.view);
   const [panel, setPanel] = useState(initial.panel);
   const [dappId, setDappId] = useState(initial.dappId);
   const [eventFilter, setEventFilter] = useState("all");
   const [searchPayload, setSearchPayload] = useState(null);
 
   useEffect(() => {
+    if (view === "landing") {
+      history.replaceState(null, "", "#home");
+      return;
+    }
     if (panel === "apps" && dappId) {
       history.replaceState(null, "", `#apps/${dappId}`);
     } else if (panel === "search") {
@@ -61,7 +69,7 @@ export default function App() {
     } else {
       history.replaceState(null, "", `#${panel}`);
     }
-  }, [panel, dappId]);
+  }, [view, panel, dappId]);
 
   const counts = useMemo(
     () => ({
@@ -71,16 +79,31 @@ export default function App() {
     [data]
   );
 
+  const goHome = () => {
+    setSearchPayload(null);
+    setDappId(null);
+    setView("landing");
+  };
+
+  const enterBoard = (id = "operators") => {
+    setSearchPayload(null);
+    setDappId(null);
+    setPanel(id);
+    setView("board");
+  };
+
   const navigate = (id) => {
     setSearchPayload(null);
     setDappId(null);
     setPanel(id);
+    setView("board");
   };
 
   const openSearch = (payload) => {
     setSearchPayload(payload);
     setPanel("search");
     setDappId(null);
+    setView("board");
   };
 
   if (loading && !data) {
@@ -89,6 +112,23 @@ export default function App() {
 
   if (error && !data) {
     return <div className="empty" style={{ margin: 24 }}>Failed to load: {error}</div>;
+  }
+
+  if (view === "landing") {
+    return (
+      <>
+        <div className="bg" />
+        <LandingPage
+          counts={counts}
+          live={data?.live}
+          priceLabel={formatPriceUsd(priceUsd)}
+          theme={theme}
+          onToggleTheme={toggle}
+          onEnterBoard={enterBoard}
+        />
+        <InstallPrompt />
+      </>
+    );
   }
 
   const dapp = dappId ? getDapp(dappId) : null;
@@ -104,19 +144,25 @@ export default function App() {
         <Sidebar
           panel={panel === "search" ? "" : panel}
           onNavigate={navigate}
+          onGoHome={goHome}
           counts={counts}
           onToggleTheme={toggle}
         />
 
         <div className="workspace">
           <div className="mobile-bar">
-            <div className="mobile-bar__brand">
-              <span className="brand__mark brand__mark--sm">IF</span>
+            <button
+              type="button"
+              className="mobile-bar__brand"
+              onClick={goHome}
+              aria-label="Back to Interfold Board landing"
+            >
+              <img className="brand__logo brand__logo--sm" src="/favicon.svg" width={36} height={36} alt="" />
               <div>
                 <p className="brand__kicker">Community board</p>
-                <strong>InterFold</strong>
+                <strong>Interfold Board</strong>
               </div>
-            </div>
+            </button>
             <div className="mobile-bar__actions">
               <SidebarFoldPriceWidget compact />
               <button
@@ -247,8 +293,11 @@ export default function App() {
               />
             ) : null}
           </main>
+
+          <BoardDisclaimer />
         </div>
       </div>
+      <InstallPrompt />
     </>
   );
 }
