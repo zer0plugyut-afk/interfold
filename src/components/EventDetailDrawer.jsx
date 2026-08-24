@@ -1,10 +1,10 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Copy, Check, ExternalLink, X } from "lucide-react";
 import { etherscanAddress, etherscanTx, num, shortAddr } from "../lib/format";
 
-const PREVIEW_LEN = 28;
 const HEX_ADDR = /^0x[a-fA-F0-9]{40}$/;
 const HEX_LONG = /^0x[a-fA-F0-9]{66,}$/;
+const MORPH_MS = 430;
 
 function formatWhen(iso) {
   if (!iso) return "—";
@@ -82,7 +82,6 @@ function ArgValue({ value, sepolia }) {
     );
   }
 
-  // Long hex, long decimals, or any long scalar — wrap inside the card
   if (text.length > 28 || HEX_LONG.test(text)) {
     return (
       <div className="drawer-arg__val">
@@ -118,18 +117,48 @@ function flattenArgs(args, prefix = "") {
 
 /**
  * Right-side detail drawer for an indexed event row.
+ * Open/close uses a clip-path morph.
  * @param {{ event: object|null, onClose: () => void, network?: 'mainnet'|'sepolia' }} props
  */
 export function EventDetailDrawer({ event, onClose, network = "mainnet" }) {
   const titleId = useId();
-  const open = Boolean(event);
   const sepolia = network === "sepolia";
-  const txHref = sepolia
-    ? `https://sepolia.etherscan.io/tx/${event?.txHash}`
-    : etherscanTx(event?.txHash);
+  const closeTimer = useRef(null);
+  const [mounted, setMounted] = useState(Boolean(event));
+  const [state, setState] = useState(event ? "open" : "closed");
+  const [displayEvent, setDisplayEvent] = useState(event);
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+
+    if (event) {
+      setDisplayEvent(event);
+      setMounted(true);
+      // Next frame so closed → open clip-path transition runs
+      const raf = requestAnimationFrame(() => setState("open"));
+      return () => cancelAnimationFrame(raf);
+    }
+
+    if (mounted) {
+      setState("closing");
+      closeTimer.current = setTimeout(() => {
+        setMounted(false);
+        setState("closed");
+        setDisplayEvent(null);
+        closeTimer.current = null;
+      }, MORPH_MS);
+    }
+
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, [event]); // eslint-disable-line react-hooks/exhaustive-deps -- mount driven by event presence
+
+  useEffect(() => {
+    if (state !== "open") return undefined;
     const onKey = (e) => {
       if (e.key === "Escape") onClose();
     };
@@ -140,15 +169,28 @@ export function EventDetailDrawer({ event, onClose, network = "mainnet" }) {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [state, onClose]);
 
-  if (!open) return null;
+  if (!mounted || !displayEvent) return null;
 
-  const argRows = flattenArgs(event.args || {});
+  const open = state === "open";
+  const txHref = sepolia
+    ? `https://sepolia.etherscan.io/tx/${displayEvent.txHash}`
+    : etherscanTx(displayEvent.txHash);
+  const argRows = flattenArgs(displayEvent.args || {});
 
   return (
-    <div className="drawer-root" role="presentation">
-      <button type="button" className="drawer-backdrop" aria-label="Close details" onClick={onClose} />
+    <div
+      className="drawer-root"
+      data-state={open ? "open" : "closing"}
+      role="presentation"
+    >
+      <button
+        type="button"
+        className="drawer-backdrop"
+        aria-label="Close details"
+        onClick={onClose}
+      />
       <aside
         className="drawer-panel"
         role="dialog"
@@ -157,8 +199,8 @@ export function EventDetailDrawer({ event, onClose, network = "mainnet" }) {
       >
         <header className="drawer-head">
           <div className="drawer-head__text">
-            <p className="drawer-kicker mono">{event.contract}</p>
-            <h2 id={titleId}>{event.event}</h2>
+            <p className="drawer-kicker mono">{displayEvent.contract}</p>
+            <h2 id={titleId}>{displayEvent.event}</h2>
           </div>
           <button type="button" className="drawer-close" onClick={onClose} aria-label="Close">
             <X size={18} aria-hidden />
@@ -169,29 +211,29 @@ export function EventDetailDrawer({ event, onClose, network = "mainnet" }) {
           <section className="drawer-meta">
             <div className="drawer-meta__row">
               <span>Block</span>
-              <strong className="mono">{num(event.blockNumber)}</strong>
+              <strong className="mono">{num(displayEvent.blockNumber)}</strong>
             </div>
             <div className="drawer-meta__row">
               <span>Log index</span>
-              <strong className="mono">{event.logIndex ?? "—"}</strong>
+              <strong className="mono">{displayEvent.logIndex ?? "—"}</strong>
             </div>
             <div className="drawer-meta__row">
               <span>Time</span>
-              <strong className="mono">{formatWhen(event.blockTimestamp)}</strong>
+              <strong className="mono">{formatWhen(displayEvent.blockTimestamp)}</strong>
             </div>
             <div className="drawer-meta__row">
               <span>Tx</span>
               <strong className="drawer-meta__tx">
                 <a className="addr" href={txHref} target="_blank" rel="noreferrer">
-                  {shortAddr(event.txHash)} <ExternalLink size={12} aria-hidden />
+                  {shortAddr(displayEvent.txHash)} <ExternalLink size={12} aria-hidden />
                 </a>
-                <CopyBtn text={event.txHash || ""} />
+                <CopyBtn text={displayEvent.txHash || ""} />
               </strong>
             </div>
-            {event.network ? (
+            {displayEvent.network ? (
               <div className="drawer-meta__row">
                 <span>Network</span>
-                <strong className="mono">{event.network}</strong>
+                <strong className="mono">{displayEvent.network}</strong>
               </div>
             ) : null}
           </section>

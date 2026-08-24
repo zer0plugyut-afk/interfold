@@ -2294,12 +2294,40 @@ th {
   color: var(--accent);
 }
 
+/* Theme circle wipe — View Transitions API */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
 /* Event detail drawer */
 .drawer-root {
   position: fixed;
   inset: 0;
   z-index: 80;
   pointer-events: none;
+  visibility: hidden;
+  transition: visibility linear 0.43s;
+}
+
+.drawer-root[data-state="open"] {
+  pointer-events: auto;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.drawer-root[data-state="closing"] {
+  pointer-events: none;
+  visibility: visible;
 }
 
 .drawer-backdrop {
@@ -2308,10 +2336,16 @@ th {
   border: 0;
   padding: 0;
   margin: 0;
-  background: color-mix(in srgb, black 48%, transparent);
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  backdrop-filter: blur(7px);
   cursor: pointer;
   pointer-events: auto;
-  animation: drawer-fade 0.18s ease-out;
+  opacity: 0;
+  transition: opacity 0.28s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.drawer-root[data-state="open"] .drawer-backdrop {
+  opacity: 1;
 }
 
 .drawer-panel {
@@ -2327,8 +2361,14 @@ th {
   flex-direction: column;
   pointer-events: auto;
   box-shadow: -16px 0 40px color-mix(in srgb, black 28%, transparent);
-  animation: drawer-slide 0.22s ease-out;
   overflow: hidden;
+  will-change: clip-path;
+  clip-path: inset(48% 0 48% 0);
+  transition: clip-path 0.43s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.drawer-root[data-state="open"] .drawer-panel {
+  clip-path: inset(0);
 }
 
 .drawer-head {
@@ -2548,16 +2588,6 @@ th {
   cursor: pointer;
 }
 
-@keyframes drawer-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes drawer-slide {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
-}
-
 @media (max-width: 900px) {
   .drawer-panel {
     width: 100vw;
@@ -2565,11 +2595,22 @@ th {
     border-top: 1px solid var(--line);
     top: 8vh;
     border-radius: 14px 14px 0 0;
-    animation: drawer-up 0.22s ease-out;
+    clip-path: inset(0 0 100% 0 round 14px 14px 0 0);
   }
 
-  @keyframes drawer-up {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+  .drawer-root[data-state="open"] .drawer-panel {
+    clip-path: inset(0 round 14px 14px 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-backdrop,
+  .drawer-panel,
+  .drawer-root {
+    transition: none !important;
+  }
+
+  .drawer-panel {
+    clip-path: none !important;
   }
 }
