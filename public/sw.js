@@ -1,11 +1,9 @@
-/* Minimal service worker — required for installability. */
-const CACHE = "if-board-v1";
-const PRECACHE = ["/", "/index.html", "/favicon.svg", "/site.webmanifest"];
+/* Minimal SW for installability — must not fail install on missing assets. */
+const CACHE = "if-board-v2";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE));
 });
 
 self.addEventListener("activate", (event) => {
@@ -23,12 +21,12 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        const copy = response.clone();
         if (request.url.startsWith(self.location.origin) && response.ok) {
+          const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
         }
         return response;
       })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
+      .catch(() => caches.match(request))
   );
 });

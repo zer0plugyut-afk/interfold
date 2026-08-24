@@ -3,29 +3,31 @@ import { X } from "lucide-react";
 import {
   closeInstall,
   getInstallPlatform,
+  installHintForPlatform,
   isDismissed,
-  isIosSafari,
+  isIosDevice,
   isStandaloneDisplay,
   snoozeInstall,
 } from "../lib/pwaInstall";
 
 /**
- * Custom install banner (beforeinstallprompt + iOS Add to Home Screen).
+ * Install banner — native beforeinstallprompt when available,
+ * otherwise a visible how-to so it still appears on phone/desktop.
  */
 export function InstallPrompt() {
   const [deferred, setDeferred] = useState(null);
   const [visible, setVisible] = useState(false);
-  const [iosHint, setIosHint] = useState(false);
   const [busy, setBusy] = useState(false);
   const platform = getInstallPlatform();
+  const canNativeInstall = Boolean(deferred);
 
   useEffect(() => {
-    if (isStandaloneDisplay() || isDismissed()) return undefined;
+    if (isStandaloneDisplay()) return undefined;
+    if (isDismissed()) return undefined;
 
     const onBip = (e) => {
       e.preventDefault();
       setDeferred(e);
-      setIosHint(false);
       setVisible(true);
     };
 
@@ -38,21 +40,17 @@ export function InstallPrompt() {
     };
     window.addEventListener("appinstalled", onInstalled);
 
-    // iOS never fires beforeinstallprompt — show Add to Home Screen tip
-    let iosTimer;
-    if (isIosSafari()) {
-      iosTimer = window.setTimeout(() => {
-        if (!isDismissed() && !isStandaloneDisplay()) {
-          setIosHint(true);
-          setVisible(true);
-        }
-      }, 1800);
-    }
+    // Always show after a short delay so users see the card even when
+    // Chromium has not fired beforeinstallprompt yet (or on iOS).
+    const timer = window.setTimeout(() => {
+      if (isDismissed() || isStandaloneDisplay()) return;
+      setVisible(true);
+    }, 2000);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBip);
       window.removeEventListener("appinstalled", onInstalled);
-      if (iosTimer) clearTimeout(iosTimer);
+      clearTimeout(timer);
     };
   }, []);
 
@@ -64,7 +62,7 @@ export function InstallPrompt() {
   };
 
   const onInstall = async () => {
-    if (iosHint || !deferred) return;
+    if (!deferred) return;
     setBusy(true);
     try {
       await deferred.prompt();
@@ -82,9 +80,10 @@ export function InstallPrompt() {
     }
   };
 
-  const title = iosHint
-    ? "Add Interfold Board to your Home Screen"
-    : `Install Interfold Board as an app on your ${platform}`;
+  const title =
+    isIosDevice() && !canNativeInstall
+      ? "Add Interfold Board to your Home Screen"
+      : `Install Interfold Board as an app on your ${platform}`;
 
   return (
     <aside className="install-prompt" role="dialog" aria-label="Install Interfold Board">
@@ -110,17 +109,15 @@ export function InstallPrompt() {
         />
         <div className="install-prompt__body">
           <p className="install-prompt__title">{title}</p>
-          {iosHint ? (
-            <p className="install-prompt__hint">
-              Tap Share, then <strong>Add to Home Screen</strong>.
-            </p>
+          {!canNativeInstall ? (
+            <p className="install-prompt__hint">{installHintForPlatform(platform)}</p>
           ) : null}
           <div className="install-prompt__actions">
-            {!iosHint ? (
+            {canNativeInstall ? (
               <button
                 type="button"
                 className="install-prompt__install"
-                disabled={busy || !deferred}
+                disabled={busy}
                 onClick={onInstall}
               >
                 Install
