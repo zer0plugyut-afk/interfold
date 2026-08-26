@@ -29,6 +29,7 @@ const KEY_MAP = {
   CiphernodeRegistry: "registry",
   Interfold: "interfold",
   SlashingManager: "slash",
+  E3RefundManager: "refund",
 };
 
 async function main() {
@@ -87,6 +88,7 @@ async function main() {
     registry: dataset.addresses?.registry || "0xC927A5B2d8F68697bC28C0670df05178c93df2d7",
     interfold: dataset.addresses?.interfold || "0x28cF63B459e6218C69EA97ea7D90541cf648c715",
     slash: dataset.addresses?.slash || "0x974E865B1BB24AF2a9ef8204AdEA9251Cc7C5FD9",
+    refund: dataset.addresses?.refund || "0x1940eF168f4E0B3dA24BEca539856684793B0F6e",
   };
 
   const events = (dataset.timeline || []).map((e) => {
@@ -115,6 +117,7 @@ async function main() {
     registry: "registry",
     interfold: "interfold",
     slashing: "slash",
+    refund: "refund",
   };
   for (const [ck, map] of Object.entries(summary)) {
     if (ck === "totals" || typeof map !== "object") continue;
@@ -147,9 +150,19 @@ async function main() {
           ? "0xC927A5B2d8F68697bC28C0670df05178c93df2d7"
           : key === "interfold"
             ? "0x28cF63B459e6218C69EA97ea7D90541cf648c715"
-            : "0x974E865B1BB24AF2a9ef8204AdEA9251Cc7C5FD9";
+            : key === "refund"
+              ? "0x1940eF168f4E0B3dA24BEca539856684793B0F6e"
+              : "0x974E865B1BB24AF2a9ef8204AdEA9251Cc7C5FD9";
     const deploy =
-      key === "bonding" ? 25473398 : key === "registry" ? 25786378 : key === "interfold" ? 25786382 : 25786375;
+      key === "bonding"
+        ? 25473398
+        : key === "registry"
+          ? 25786378
+          : key === "interfold"
+            ? 25786382
+            : key === "refund"
+              ? 25786384
+              : 25786375;
     await sb.from("if_sync_state").upsert({
       contract_key: key,
       contract_address: addr,

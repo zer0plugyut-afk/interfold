@@ -16,6 +16,7 @@ const LABEL = {
   registry: "CiphernodeRegistry",
   interfold: "Interfold",
   slash: "SlashingManager",
+  refund: "E3RefundManager",
 };
 
 const CRISP_LABEL = {
@@ -123,8 +124,14 @@ export async function loadFromSupabase() {
   // CRISP table may not exist until 005 rename — soft-fail
   const crispEvents = crisp.error ? [] : (crisp.data || []).map(mapCrispEvent);
 
-  const eventSummary = { bonding: {}, registry: {}, interfold: {}, slashing: {} };
-  const keyMap = { bonding: "bonding", registry: "registry", interfold: "interfold", slash: "slashing" };
+  const eventSummary = { bonding: {}, registry: {}, interfold: {}, slashing: {}, refund: {} };
+  const keyMap = {
+    bonding: "bonding",
+    registry: "registry",
+    interfold: "interfold",
+    slash: "slashing",
+    refund: "refund",
+  };
   for (const c of counts.data || []) {
     const bucket = keyMap[c.contract_key] || c.contract_key;
     if (!eventSummary[bucket]) eventSummary[bucket] = {};

@@ -9,6 +9,7 @@ import {
   Vote,
   PieChart,
   AppWindow,
+  Undo2,
 } from "lucide-react";
 
 export const NAV_ICONS = {
@@ -25,6 +26,7 @@ export const CONTRACT_ICONS = {
   CiphernodeRegistry: Network,
   Interfold: Hexagon,
   SlashingManager: ShieldAlert,
+  E3RefundManager: Undo2,
   CRISPProgram: Vote,
   SelfRegistry: Network,
   "CRISP-Interfold": Hexagon,
@@ -36,6 +38,7 @@ export const CONTRACT_FILTER_META = [
   { id: "CiphernodeRegistry", label: "Registry", Icon: Network },
   { id: "Interfold", label: "Interfold (E3)", Icon: Hexagon },
   { id: "SlashingManager", label: "Slashing", Icon: ShieldAlert },
+  { id: "E3RefundManager", label: "Refunds", Icon: Undo2 },
 ];
 
 export const CRISP_FILTER_META = [

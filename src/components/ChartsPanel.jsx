@@ -21,6 +21,7 @@ const FILTERS = [
   { id: "registry", label: "Registry", contract: "CiphernodeRegistry" },
   { id: "interfold", label: "Interfold (E3)", contract: "Interfold" },
   { id: "slash", label: "Slashing", contract: "SlashingManager" },
+  { id: "refund", label: "Refunds", contract: "E3RefundManager" },
 ];
 
 const CONTRACT_SERIES = [
@@ -28,6 +29,7 @@ const CONTRACT_SERIES = [
   { key: "Registry", contract: "CiphernodeRegistry" },
   { key: "Interfold", contract: "Interfold" },
   { key: "Slashing", contract: "SlashingManager" },
+  { key: "Refunds", contract: "E3RefundManager" },
 ];
 
 /** Cap event-level series so the chart stays readable (Zama-style). */

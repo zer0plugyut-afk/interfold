@@ -21,6 +21,7 @@ export const CONTRACT_FILTERS = [
   "CiphernodeRegistry",
   "Interfold",
   "SlashingManager",
+  "E3RefundManager",
 ];
 
 export const DEFAULT_SCOPE = {

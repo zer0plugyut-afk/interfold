@@ -238,6 +238,65 @@ export const EVENT_PHASE_GROUPS = {
       ]),
     },
   ],
+
+  E3RefundManager: [
+    {
+      id: "refunds",
+      label: "Refunds",
+      match: nameIn([
+        "RefundClaimed",
+        "RefundDistributionCalculated",
+      ]),
+    },
+    {
+      id: "held-rewards",
+      label: "Held rewards",
+      match: nameIn([
+        "SuccessRewardHeld",
+        "HeldSuccessRewardClaimed",
+        "RewardRecipientSnapshotted",
+      ]),
+    },
+    {
+      id: "slashed-funds",
+      label: "Slashed funds",
+      match: nameIn([
+        "SlashedFundsEscrowed",
+        "SlashedFundsApplied",
+        "SlashedFundsCredited",
+        "SlashedFundsClaimed",
+        "SlashedFundsDistributedOnSuccess",
+        "TreasurySlashedCredited",
+        "TreasurySlashedClaimed",
+      ]),
+    },
+    {
+      id: "expulsions",
+      label: "Expulsions",
+      match: nameIn(["ExpulsionProposalStatusChanged"]),
+    },
+    {
+      id: "policy",
+      label: "Policy",
+      match: nameIn([
+        "E3PolicySnapshotted",
+        "WorkAllocationUpdated",
+        "TreasurySet",
+        "TreasuryUpdated",
+      ]),
+    },
+    {
+      id: "config",
+      label: "Config",
+      match: nameIn([
+        "InterfoldSet",
+        "InterfoldUpdated",
+        "Initialized",
+        "OwnershipTransferStarted",
+        "OwnershipTransferred",
+      ]),
+    },
+  ],
 };
 
 export function phasesForContract(contractId) {

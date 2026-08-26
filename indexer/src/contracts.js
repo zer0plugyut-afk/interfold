@@ -29,6 +29,15 @@ export const CONTRACTS = {
     deployBlock: 25786375,
     abiFile: "slash.json",
   },
+  refund: {
+    key: "refund",
+    label: "E3RefundManager",
+    address: "0x1940eF168f4E0B3dA24BEca539856684793B0F6e",
+    deployBlock: 25786384,
+    abiFile: "refund.json",
+    /** Nothing on-chain yet — watch from tip, don't scan empty history. */
+    startAtTip: true,
+  },
 };
 
 export const TOKENS = {

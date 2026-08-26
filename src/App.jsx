@@ -242,7 +242,7 @@ export default function App() {
               <section className="panel is-active panel--fill">
                 <div className="section-head">
                   <h2>Event timeline</h2>
-                  <p>Live on-chain logs (Bonding, Registry, Interfold, Slashing).</p>
+                  <p>Live on-chain logs (Bonding, Registry, Interfold, Slashing, Refunds).</p>
                 </div>
                 <EventTimeline
                   timeline={data?.timeline || []}

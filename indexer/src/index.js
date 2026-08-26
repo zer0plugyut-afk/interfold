@@ -140,21 +140,41 @@ async function etherscanLogs(address, fromBlock, toBlock, apiKey) {
   }));
 }
 
-async function ensureSyncRows(sb) {
+async function ensureSyncRows(sb, latest) {
   for (const c of Object.values(CONTRACTS)) {
     const { data } = await sb
       .from("if_sync_state")
       .select("contract_key,last_synced_block")
       .eq("contract_key", c.key)
       .maybeSingle();
+
+    const tipCursor = Number(latest);
+    const backfillStart = c.deployBlock - 1;
+
     if (!data) {
       await sb.from("if_sync_state").upsert({
         contract_key: c.key,
         contract_address: c.address,
-        last_synced_block: c.deployBlock - 1,
+        last_synced_block: c.startAtTip ? tipCursor : backfillStart,
         deploy_block: c.deployBlock,
         updated_at: new Date().toISOString(),
       });
+      if (c.startAtTip) {
+        console.log(`[${c.label}] startAtTip — cursor set to ${tipCursor} (no history backfill)`);
+      }
+      continue;
+    }
+
+    // If a prior run primed refund at deploy-1, jump to tip instead of scanning empty range
+    if (c.startAtTip && Number(data.last_synced_block) <= backfillStart) {
+      await sb
+        .from("if_sync_state")
+        .update({
+          last_synced_block: tipCursor,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("contract_key", c.key);
+      console.log(`[${c.label}] startAtTip — jumped cursor ${data.last_synced_block} → ${tipCursor}`);
     }
   }
 }
@@ -424,7 +444,7 @@ async function syncContract(sb, provider, cfg, latest) {
 async function syncOnce(sb, provider) {
   const latest = await provider.getBlockNumber();
   console.log("tip", latest);
-  await ensureSyncRows(sb);
+  await ensureSyncRows(sb, latest);
 
   let total = 0;
   for (const cfg of Object.values(CONTRACTS)) {
@@ -459,7 +479,7 @@ async function main() {
   console.log("rpc", rpc.replace(/\/v2\/[^/]+/, "/v2/***"));
   console.log("mode", ONCE ? "once" : `loop every ${POLL_MS / 1000}s`);
   console.log("strategy: tip-only from if_sync_state.last_synced_block (no full rescan)");
-  console.log("coverage: ALL ABI events on bonding/registry/interfold/slash — including E3* when unpaused");
+  console.log("coverage: ALL ABI events on bonding/registry/interfold/slash/refund — including E3* when unpaused");
 
   await syncOnce(sb, provider);
   if (ONCE) return;
