@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { useFoldPrice } from "../hooks/useFoldPrice";
+import { useFoldCirculatingSupply } from "../hooks/useFoldCirculatingSupply";
 import { formatPriceUsd, formatUsd } from "../lib/foldPrice";
 import { FoldIcon } from "./FoldIcon";
 import {
@@ -147,8 +148,21 @@ export function TokenomicsPanel() {
   const [activeId, setActiveId] = useState(null);
   const [chartMode, setChartMode] = useState("cumulative");
   const { priceUsd, change24h, loading: priceLoading } = useFoldPrice();
+  const {
+    circulating: liveCirculating,
+    totalSupply: liveTotal,
+    loading: supplyLoading,
+    error: supplyError,
+  } = useFoldCirculatingSupply();
   const narrow = useIsNarrow(900);
   const chartHeight = narrow ? 260 : 360;
+
+  /** Official circulating from supply.theinterfold.com; unlock model as fallback. */
+  const circulating = liveCirculating ?? snap.circulating;
+  const totalSupply = liveTotal ?? snap.totalSupply ?? FOLD_TOTAL_SUPPLY;
+  const locked = Math.max(0, totalSupply - circulating);
+  const circulatingPct = totalSupply > 0 ? (circulating / totalSupply) * 100 : 0;
+  const usingOfficialSupply = liveCirculating != null;
 
   const perDay = unlockPerDay(asOf);
   const next7 = unlockInNextDays(7, asOf);
@@ -181,8 +195,10 @@ export function TokenomicsPanel() {
           <p className="brand__kicker">From docs.theinterfold.com/tokenomics</p>
           <h2>FOLD Tokenomics</h2>
           <p className="tok-head__lede">
-            Pure unlock model — recalculated on refresh. Linear unlocks start{" "}
-            <span className="hint">1 Sep 2026</span> (official docs). TGE / transferability{" "}
+            Circulating supply from{" "}
+            <span className="hint">supply.theinterfold.com</span>. Unlock schedule follows the
+            official docs — linear unlocks start{" "}
+            <span className="hint">1 Sep 2026</span>. TGE / transferability{" "}
             <span className="hint">
               {FOLD_TGE_DATE.toLocaleDateString("en-US", {
                 day: "numeric",
@@ -213,12 +229,19 @@ export function TokenomicsPanel() {
 
       <section className="tok-hero">
         <div>
-          <p className="tok-tile__label">In circulation (model)</p>
-          <p className="tok-hero__circ">{formatFold(snap.circulating)}</p>
+          <p className="tok-tile__label">
+            In circulation {usingOfficialSupply ? "(live)" : supplyLoading ? "(loading…)" : "(model)"}
+          </p>
+          <p className="tok-hero__circ">
+            {supplyLoading && liveCirculating == null ? "…" : formatFold(circulating)}
+          </p>
           <p className="tok-hero__sub">
-            {snap.circulatingPct.toFixed(2)}% of {formatFold(snap.totalSupply)}
-            {priceUsd != null ? ` · ${formatUsd(snap.circulating, priceUsd)}` : ""} · docs TGE cap ≤{" "}
-            {snap.tgeCirculatingCapPct}%
+            {circulatingPct.toFixed(2)}% of {formatFold(totalSupply)}
+            {priceUsd != null ? ` · ${formatUsd(circulating, priceUsd)}` : ""}
+            {usingOfficialSupply
+              ? " · supply.theinterfold.com"
+              : ` · docs TGE cap ≤ ${snap.tgeCirculatingCapPct}%`}
+            {supplyError && !usingOfficialSupply ? ` · supply API unavailable` : ""}
           </p>
         </div>
 
@@ -228,18 +251,20 @@ export function TokenomicsPanel() {
               <FoldIcon size={18} /> Market cap
             </p>
             <strong className="tok-mkt-card__value">
-              {priceUsd != null
-                ? formatUsd(snap.circulating, priceUsd)
-                : "—"}
+              {priceUsd != null ? formatUsd(circulating, priceUsd) : "—"}
             </strong>
-            <p className="tok-tile__hint">Circulating × spot (updates as unlocks land)</p>
+            <p className="tok-tile__hint">
+              {usingOfficialSupply
+                ? "Official circulating × spot"
+                : "Circulating × spot (updates as unlocks land)"}
+            </p>
           </div>
           <div className="tok-mkt-card">
             <p className="tok-tile__label">
               <FoldIcon size={18} /> FDV
             </p>
             <strong className="tok-mkt-card__value">
-              {priceUsd != null ? formatUsd(snap.totalSupply, priceUsd) : "—"}
+              {priceUsd != null ? formatUsd(totalSupply, priceUsd) : "—"}
             </strong>
             <p className="tok-tile__hint">1.2B × spot (fully diluted)</p>
           </div>
@@ -248,14 +273,14 @@ export function TokenomicsPanel() {
         <div className="tok-hero__tiles">
           <Tile
             label="Still locked"
-            value={formatFold(snap.locked)}
-            usd={priceUsd != null ? formatUsd(snap.locked, priceUsd) : null}
-            hint="Not yet released"
+            value={formatFold(locked)}
+            usd={priceUsd != null ? formatUsd(locked, priceUsd) : null}
+            hint={usingOfficialSupply ? "Total − live circulating" : "Not yet released"}
           />
           <Tile
             label="Total supply"
-            value={formatFold(snap.totalSupply)}
-            usd={priceUsd != null ? formatUsd(snap.totalSupply, priceUsd) : null}
+            value={formatFold(totalSupply)}
+            usd={priceUsd != null ? formatUsd(totalSupply, priceUsd) : null}
             hint="Fixed 1.2B"
           />
           <Tile label="TGE unlocked" value="≤ 25.21%" hint="Investors + Unsold CCA" />
