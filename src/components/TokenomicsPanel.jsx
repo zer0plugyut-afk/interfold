@@ -195,10 +195,8 @@ export function TokenomicsPanel() {
           <p className="brand__kicker">From docs.theinterfold.com/tokenomics</p>
           <h2>FOLD Tokenomics</h2>
           <p className="tok-head__lede">
-            Circulating supply from{" "}
-            <span className="hint">supply.theinterfold.com</span>. Unlock schedule follows the
-            official docs — linear unlocks start{" "}
-            <span className="hint">1 Sep 2026</span>. TGE / transferability{" "}
+            Live circulating supply with unlock schedule from the official docs — linear unlocks
+            start <span className="hint">1 Sep 2026</span>. TGE / transferability{" "}
             <span className="hint">
               {FOLD_TGE_DATE.toLocaleDateString("en-US", {
                 day: "numeric",
@@ -239,7 +237,7 @@ export function TokenomicsPanel() {
             {circulatingPct.toFixed(2)}% of {formatFold(totalSupply)}
             {priceUsd != null ? ` · ${formatUsd(circulating, priceUsd)}` : ""}
             {usingOfficialSupply
-              ? " · supply.theinterfold.com"
+              ? ""
               : ` · docs TGE cap ≤ ${snap.tgeCirculatingCapPct}%`}
             {supplyError && !usingOfficialSupply ? ` · supply API unavailable` : ""}
           </p>
