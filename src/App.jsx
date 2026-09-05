@@ -18,6 +18,7 @@ import { useTheme } from "./hooks/useTheme";
 import { getDapp } from "./lib/dapps";
 import { formatPriceUsd } from "./lib/foldPrice";
 import { num } from "./lib/format";
+import { enrichOperatorsWithExits } from "./lib/operatorExits";
 import { Moon, Sun } from "lucide-react";
 import { FoldIcon } from "./components/FoldIcon";
 
@@ -71,12 +72,17 @@ export default function App() {
     }
   }, [view, panel, dappId]);
 
+  const operators = useMemo(
+    () => enrichOperatorsWithExits(data?.operators || [], data?.timeline || []),
+    [data]
+  );
+
   const counts = useMemo(
     () => ({
-      operators: data?.operators?.length ?? 0,
+      operators: operators.length,
       events: data?.timeline?.length ?? 0,
     }),
-    [data]
+    [operators, data]
   );
 
   const goHome = () => {
@@ -234,7 +240,7 @@ export default function App() {
                     <span className="hint">tFOLD balance ÷ ticket price (1,000)</span>.
                   </p>
                 </div>
-                <OperatorsTable operators={data?.operators || []} priceUsd={priceUsd} />
+                <OperatorsTable operators={operators} priceUsd={priceUsd} />
               </section>
             )}
 

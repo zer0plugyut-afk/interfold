@@ -6,15 +6,28 @@ import {
   phasesForContract,
 } from "../lib/eventPhaseFilters";
 import { etherscanTx, num, shortAddr } from "../lib/format";
+import { formatUnlockAt, formatUnlockCountdown } from "../lib/timeFormat";
 import { EventDetailDrawer } from "./EventDetailDrawer";
 
 const PAGE_SIZE = 40;
 
-function summarizeArgs(args) {
+function summarizeArgs(args, nowMs) {
   if (!args || typeof args !== "object") return "—";
   const entries = Object.entries(args).slice(0, 4);
   if (!entries.length) return "—";
-  return entries.map(([k, v]) => `${k}=${String(v).slice(0, 36)}`).join(" · ");
+  return entries
+    .map(([k, v]) => {
+      if (k === "unlockAt") {
+        const when = formatUnlockAt(v);
+        const cd = formatUnlockCountdown(v, nowMs);
+        const parts = [String(v)];
+        if (when) parts.push(when);
+        if (cd) parts.push(cd);
+        return `${k}=${parts.join(" · ")}`;
+      }
+      return `${k}=${String(v).slice(0, 36)}`;
+    })
+    .join(" · ");
 }
 
 function formatWhen(iso) {
@@ -44,26 +57,44 @@ function isNewProgramEvent(e) {
   return e?.event === "E3ProgramRegistered";
 }
 
-function EventName({ event, flagged }) {
+function isExitRequestEvent(e) {
+  return (
+    e?.event === "CiphernodeDeregistrationRequested" ||
+    e?.event === "AssetsQueuedForExit"
+  );
+}
+
+function EventName({ event, programFlag, exitFlag }) {
   return (
     <>
       {event}
-      {flagged ? <span className="event-flag">New program</span> : null}
+      {programFlag ? <span className="event-flag">New program</span> : null}
+      {exitFlag ? <span className="event-flag event-flag--exit">Exit requested</span> : null}
     </>
   );
 }
 
-function EventCards({ rows, showContract, txHref, onSelect, selectedKey }) {
+function useNow(intervalMs = 30_000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
+function EventCards({ rows, showContract, txHref, onSelect, selectedKey, nowMs }) {
   return (
     <ul className="event-cards">
       {rows.map((e) => {
         const key = rowKey(e);
-        const flagged = isNewProgramEvent(e);
+        const programFlag = isNewProgramEvent(e);
+        const exitFlag = isExitRequestEvent(e);
         return (
           <li key={key}>
             <button
               type="button"
-              className={`event-card event-card--btn${selectedKey === key ? " is-selected" : ""}${flagged ? " is-new-program" : ""}`}
+              className={`event-card event-card--btn${selectedKey === key ? " is-selected" : ""}${programFlag ? " is-new-program" : ""}${exitFlag ? " is-exit-request" : ""}`}
               onClick={() => onSelect(e)}
             >
               <div className="event-card__top">
@@ -75,9 +106,9 @@ function EventCards({ rows, showContract, txHref, onSelect, selectedKey }) {
                 </span>
               </div>
               <strong className="event-card__event">
-                <EventName event={e.event} flagged={flagged} />
+                <EventName event={e.event} programFlag={programFlag} exitFlag={exitFlag} />
               </strong>
-              <p className="event-card__args mono">{summarizeArgs(e.args)}</p>
+              <p className="event-card__args mono">{summarizeArgs(e.args, nowMs)}</p>
               <a
                 className="event-card__tx addr"
                 href={txHref(e.txHash)}
@@ -305,6 +336,7 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
   const [phase, setPhase] = useState("all");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(null);
+  const nowMs = useNow();
 
   const contractCounts = useMemo(() => {
     const counts = { all: timeline.length };
@@ -398,11 +430,12 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
               <tbody>
                 {pageRows.map((e) => {
                   const key = rowKey(e);
-                  const flagged = isNewProgramEvent(e);
+                  const programFlag = isNewProgramEvent(e);
+                  const exitFlag = isExitRequestEvent(e);
                   return (
                     <tr
                       key={key}
-                      className={`events-table__row${selectedKey === key ? " is-selected" : ""}${flagged ? " is-new-program" : ""}`}
+                      className={`events-table__row${selectedKey === key ? " is-selected" : ""}${programFlag ? " is-new-program" : ""}${exitFlag ? " is-exit-request" : ""}`}
                       tabIndex={0}
                       onClick={() => setSelected(e)}
                       onKeyDown={(ev) => {
@@ -417,9 +450,13 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
                       ) : null}
                       <td className="mono">{num(e.blockNumber)}</td>
                       <td className="events-table__event">
-                        <EventName event={e.event} flagged={flagged} />
+                        <EventName
+                          event={e.event}
+                          programFlag={programFlag}
+                          exitFlag={exitFlag}
+                        />
                       </td>
-                      <td className="events-table__args mono">{summarizeArgs(e.args)}</td>
+                      <td className="events-table__args mono">{summarizeArgs(e.args, nowMs)}</td>
                       <td className="mono events-table__time">{formatWhen(e.blockTimestamp)}</td>
                       <td>
                         <a
@@ -444,6 +481,7 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
             txHref={etherscanTx}
             onSelect={setSelected}
             selectedKey={selectedKey}
+            nowMs={nowMs}
           />
           <Pagination
             page={page}

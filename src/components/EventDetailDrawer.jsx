@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Copy, Check, ExternalLink, X } from "lucide-react";
 import { etherscanAddress, etherscanTx, num, shortAddr } from "../lib/format";
+import { formatUnlockAt, formatUnlockCountdown } from "../lib/timeFormat";
 
 const HEX_ADDR = /^0x[a-fA-F0-9]{40}$/;
 const HEX_LONG = /^0x[a-fA-F0-9]{66,}$/;
@@ -52,7 +53,31 @@ function CopyBtn({ text }) {
   );
 }
 
-function ArgValue({ value, sepolia }) {
+function UnlockAtValue({ value }) {
+  const text = stringifyValue(value);
+  const when = formatUnlockAt(value);
+  const countdown = formatUnlockCountdown(value);
+  return (
+    <div className="drawer-arg__val">
+      <div className="drawer-arg__tools">
+        <CopyBtn text={text} />
+      </div>
+      <code className="drawer-arg__short mono">{text}</code>
+      {when || countdown ? (
+        <div className="drawer-arg__unlock mono">
+          {when ? <span>{when}</span> : null}
+          {countdown ? <span className="drawer-arg__countdown">{countdown}</span> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ArgValue({ value, sepolia, argKey }) {
+  if (argKey === "unlockAt" || argKey?.endsWith(".unlockAt")) {
+    return <UnlockAtValue value={value} />;
+  }
+
   const text = stringifyValue(value);
   const addrHref = (a) =>
     sepolia ? `https://sepolia.etherscan.io/address/${a}` : etherscanAddress(a);
@@ -247,7 +272,7 @@ export function EventDetailDrawer({ event, onClose, network = "mainnet" }) {
                 {argRows.map(({ key, value }) => (
                   <li key={key} className="drawer-arg">
                     <span className="drawer-arg__key mono">{key}</span>
-                    <ArgValue value={value} sepolia={sepolia} />
+                    <ArgValue value={value} sepolia={sepolia} argKey={key} />
                   </li>
                 ))}
               </ul>

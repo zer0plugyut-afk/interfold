@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { enrichOperatorsWithExits } from "./operatorExits";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -100,7 +101,7 @@ function mapCrispEvent(e) {
 }
 
 export async function loadFromSupabase() {
-  const [ops, stats, events, counts, crisp] = await Promise.all([
+  const [ops, stats, events, counts, crisp, exitEvents] = await Promise.all([
     supabase.from("if_operators").select("*").order("available_tickets", { ascending: false }),
     supabase.from("if_network_stats").select("*").eq("id", 1).maybeSingle(),
     supabase
@@ -116,6 +117,17 @@ export async function loadFromSupabase() {
       .order("block_number", { ascending: false })
       .order("log_index", { ascending: false })
       .limit(300),
+    supabase
+      .from("if_events")
+      .select("event_name,args,block_number")
+      .eq("contract_key", "bonding")
+      .in("event_name", [
+        "CiphernodeDeregistrationRequested",
+        "AssetsQueuedForExit",
+        "AssetsClaimed",
+      ])
+      .order("block_number", { ascending: false })
+      .limit(500),
   ]);
 
   for (const r of [ops, stats, events, counts]) {
@@ -138,6 +150,15 @@ export async function loadFromSupabase() {
     eventSummary[bucket][c.event_name] = Number(c.count);
   }
 
+  const timeline = (events.data || []).map(mapEvent);
+  const exitTimeline = exitEvents.error
+    ? timeline
+    : (exitEvents.data || []).map((e) => ({
+        event: e.event_name,
+        args: e.args || {},
+        blockNumber: e.block_number,
+      }));
+
   return {
     source: "supabase",
     meta: {
@@ -146,8 +167,8 @@ export async function loadFromSupabase() {
       network: "ethereum-mainnet",
     },
     live: mapLive(stats.data),
-    operators: (ops.data || []).map(mapOperator),
-    timeline: (events.data || []).map(mapEvent),
+    operators: enrichOperatorsWithExits((ops.data || []).map(mapOperator), exitTimeline),
+    timeline,
     crisp: {
       network: crispEvents[0]?.network || "mainnet",
       events: crispEvents,
@@ -169,6 +190,7 @@ export async function loadFromJson() {
   }));
   return {
     ...data,
+    operators: enrichOperatorsWithExits(data.operators || [], timeline),
     timeline,
     crisp: data.crisp || { network: "mainnet", events: [] },
     source: "json",
