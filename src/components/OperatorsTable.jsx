@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { etherscanAddress, num, shortAddr } from "../lib/format";
 import { formatUsd } from "../lib/foldPrice";
 import { formatUnlockCountdown } from "../lib/timeFormat";
+import { useEnsNames } from "../hooks/useEnsNames";
 import { Pill } from "./Pill";
 
 function useNow(intervalMs = 30_000) {
@@ -13,8 +14,39 @@ function useNow(intervalMs = 30_000) {
   return now;
 }
 
+function AddrCell({ address, ens, trailing, sub }) {
+  return (
+    <>
+      <div className="op-addr-row">
+        <a
+          className={`addr${ens ? " addr--ens" : ""}`}
+          href={etherscanAddress(address)}
+          target="_blank"
+          rel="noreferrer"
+          title={address}
+        >
+          {ens || shortAddr(address)}
+        </a>
+        {trailing}
+      </div>
+      {sub}
+    </>
+  );
+}
+
 export function OperatorsTable({ operators, priceUsd }) {
   const nowMs = useNow();
+
+  const ensAddresses = useMemo(() => {
+    const out = [];
+    for (const o of operators || []) {
+      if (o.address) out.push(o.address);
+      if (o.bondOwner) out.push(o.bondOwner);
+    }
+    return out;
+  }, [operators]);
+
+  const ens = useEnsNames(ensAddresses);
 
   if (!operators?.length) {
     return <div className="empty">No operators yet. Seed JSON or run the indexer.</div>;
@@ -46,6 +78,8 @@ export function OperatorsTable({ operators, priceUsd }) {
             const bond = Number(o.ciphernodeBond) || 0;
             const exiting = Boolean(o.hasExitInProgress);
             const unlockCd = exiting ? formatUnlockCountdown(o.exitUnlockAt, nowMs) : null;
+            const opEns = ens[String(o.address || "").toLowerCase()] || null;
+            const ownerEns = ens[String(o.bondOwner || "").toLowerCase()] || null;
             const status = o.isActive ? (
               <Pill>active</Pill>
             ) : o.isRegistered ? (
@@ -54,34 +88,31 @@ export function OperatorsTable({ operators, priceUsd }) {
               <Pill kind="bad">inactive</Pill>
             );
 
+            const opSubParts = [];
+            if (opEns) opSubParts.push(shortAddr(o.address));
+            if (exiting && unlockCd) opSubParts.push(unlockCd);
+            opSubParts.push(`added @ block ${num(o.addedBlock)}`);
+
             return (
               <tr key={o.address} className={exiting ? "op-row is-exiting" : undefined}>
                 <td>
-                  <div className="op-addr-row">
-                    <a
-                      className="addr"
-                      href={etherscanAddress(o.address)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {shortAddr(o.address)}
-                    </a>
-                    {exiting ? <span className="op-exit-badge">exit</span> : null}
-                  </div>
-                  <div className="ticket-cell__sub mono">
-                    {exiting && unlockCd ? `${unlockCd} · ` : ""}
-                    added @ block {num(o.addedBlock)}
-                  </div>
+                  <AddrCell
+                    address={o.address}
+                    ens={opEns}
+                    trailing={exiting ? <span className="op-exit-badge">exit</span> : null}
+                    sub={<div className="ticket-cell__sub mono">{opSubParts.join(" · ")}</div>}
+                  />
                 </td>
                 <td>
-                  <a
-                    className="addr"
-                    href={etherscanAddress(o.bondOwner)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {shortAddr(o.bondOwner)}
-                  </a>
+                  <AddrCell
+                    address={o.bondOwner}
+                    ens={ownerEns}
+                    sub={
+                      ownerEns ? (
+                        <div className="ticket-cell__sub mono">{shortAddr(o.bondOwner)}</div>
+                      ) : null
+                    }
+                  />
                 </td>
                 <td className="mono">
                   {num(o.ciphernodeBond)} FOLD
