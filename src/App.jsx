@@ -7,6 +7,7 @@ import { AddressSearch, AddressSearchResults } from "./components/AddressSearch"
 import { EventTimeline } from "./components/EventTimeline";
 import { Gauges } from "./components/Gauges";
 import { InstallPrompt } from "./components/InstallPrompt";
+import { DonateButton, DonateModal } from "./components/DonateModal";
 import { LandingPage } from "./components/LandingPage";
 import { OperatorsTable } from "./components/OperatorsTable";
 import {
@@ -62,6 +63,7 @@ export default function App() {
   const [eventFilter, setEventFilter] = useState("all");
   const [searchPayload, setSearchPayload] = useState(null);
   const [showOpViz, setShowOpViz] = useState(false);
+  const [showDonate, setShowDonate] = useState(false);
 
   useEffect(() => {
     if (view === "landing") {
@@ -136,7 +138,9 @@ export default function App() {
           theme={theme}
           onToggleTheme={toggle}
           onEnterBoard={enterBoard}
+          onDonate={() => setShowDonate(true)}
         />
+        <DonateModal open={showDonate} onClose={() => setShowDonate(false)} />
         <InstallPrompt />
       </>
     );
@@ -157,23 +161,32 @@ export default function App() {
           onNavigate={navigate}
           onGoHome={goHome}
           counts={counts}
+          theme={theme}
           onToggleTheme={toggle}
+          onDonate={() => setShowDonate(true)}
         />
 
         <div className="workspace">
           <div className="mobile-bar">
-            <button
-              type="button"
-              className="mobile-bar__brand"
-              onClick={goHome}
-              aria-label="Back to Interfold Board landing"
-            >
-              <img className="brand__logo brand__logo--sm" src="/favicon.svg" width={36} height={36} alt="" />
-              <div>
-                <p className="brand__kicker">Community board</p>
-                <strong>Interfold Board</strong>
-              </div>
-            </button>
+            <div className="mobile-bar__lead">
+              <button
+                type="button"
+                className="mobile-bar__brand"
+                onClick={goHome}
+                aria-label="Back to Interfold Board landing"
+              >
+                <img className="brand__logo brand__logo--sm" src="/favicon.svg" width={36} height={36} alt="" />
+                <div>
+                  <p className="brand__kicker">Community board</p>
+                  <strong>Interfold Board</strong>
+                </div>
+              </button>
+              <DonateButton
+                onClick={() => setShowDonate(true)}
+                className="donate-btn--mobile"
+                iconOnly
+              />
+            </div>
             <div className="mobile-bar__actions">
               <SidebarFoldPriceWidget compact />
               <button
@@ -317,6 +330,7 @@ export default function App() {
           <BoardDisclaimer />
         </div>
       </div>
+      <DonateModal open={showDonate} onClose={() => setShowDonate(false)} />
       <InstallPrompt />
     </>
   );

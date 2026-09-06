@@ -1,8 +1,10 @@
+import { Moon, Sun } from "lucide-react";
 import { NAV_ICONS } from "../lib/icons";
 import { DAPPS } from "../lib/dapps";
+import { DonateButton } from "./DonateModal";
 import { SidebarFoldPriceWidget } from "./SidebarFoldPriceWidget";
 
-export function Sidebar({ panel, onNavigate, onGoHome, counts, onToggleTheme }) {
+export function Sidebar({ panel, onNavigate, onGoHome, counts, theme, onToggleTheme, onDonate }) {
   const items = [
     { id: "operators", label: "Operators", count: counts.operators },
     { id: "events", label: "Events", count: counts.events },
@@ -55,9 +57,16 @@ export function Sidebar({ panel, onNavigate, onGoHome, counts, onToggleTheme }) 
       </nav>
 
       <div className="sidebar__foot">
+        <DonateButton onClick={onDonate} />
         <SidebarFoldPriceWidget />
-        <button type="button" className="theme-btn" onClick={onToggleTheme}>
-          Theme
+        <button
+          type="button"
+          className="theme-btn theme-btn--icon"
+          onClick={onToggleTheme}
+          aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          title={theme === "dark" ? "Light mode" : "Dark mode"}
+        >
+          {theme === "dark" ? <Sun size={18} aria-hidden /> : <Moon size={18} aria-hidden />}
         </button>
       </div>
     </aside>

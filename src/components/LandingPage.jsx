@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { ArrowRight, Moon, Sun } from "lucide-react";
+import { DonateButton } from "./DonateModal";
 import { FoldIcon } from "./FoldIcon";
 
 /**
@@ -12,6 +13,7 @@ export function LandingPage({
   theme,
   onToggleTheme,
   onEnterBoard,
+  onDonate,
 }) {
   useEffect(() => {
     document.documentElement.classList.add("landing-open");
@@ -32,6 +34,7 @@ export function LandingPage({
           <span>Interfold Board</span>
         </div>
         <div className="landing-page__nav-actions">
+          <DonateButton onClick={onDonate} className="donate-btn--nav" />
           <button
             type="button"
             className="theme-btn theme-btn--icon"
