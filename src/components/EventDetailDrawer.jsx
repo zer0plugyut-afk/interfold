@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Copy, Check, ExternalLink, X } from "lucide-react";
+import { Cancel01Icon, Copy01Icon, LinkSquare01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "./Icon";
 import { etherscanAddress, etherscanTx, num, shortAddr } from "../lib/format";
 import { formatUnlockAt, formatUnlockCountdown } from "../lib/timeFormat";
 
@@ -48,7 +49,7 @@ function CopyBtn({ text }) {
         }
       }}
     >
-      {ok ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
+      {ok ? <Icon icon={Tick02Icon} size={13} /> : <Icon icon={Copy01Icon} size={13} />}
     </button>
   );
 }
@@ -228,7 +229,7 @@ export function EventDetailDrawer({ event, onClose, network = "mainnet" }) {
             <h2 id={titleId}>{displayEvent.event}</h2>
           </div>
           <button type="button" className="drawer-close" onClick={onClose} aria-label="Close">
-            <X size={18} aria-hidden />
+            <Icon icon={Cancel01Icon} size={18} />
           </button>
         </header>
 
@@ -250,7 +251,7 @@ export function EventDetailDrawer({ event, onClose, network = "mainnet" }) {
               <span>Tx</span>
               <strong className="drawer-meta__tx">
                 <a className="addr" href={txHref} target="_blank" rel="noreferrer">
-                  {shortAddr(displayEvent.txHash)} <ExternalLink size={12} aria-hidden />
+                  {shortAddr(displayEvent.txHash)} <Icon icon={LinkSquare01Icon} size={12} />
                 </a>
                 <CopyBtn text={displayEvent.txHash || ""} />
               </strong>

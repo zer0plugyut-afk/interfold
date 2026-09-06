@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { ArrowRight, Moon, Sun } from "lucide-react";
+import { ArrowRight01Icon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { DonateButton } from "./DonateModal";
 import { FoldIcon } from "./FoldIcon";
+import { Icon } from "./Icon";
 
 /**
  * Full-page entry — outside the dashboard shell.
@@ -41,7 +42,11 @@ export function LandingPage({
             onClick={onToggleTheme}
             aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
           >
-            {theme === "dark" ? <Sun size={18} aria-hidden /> : <Moon size={18} aria-hidden />}
+            {theme === "dark" ? (
+              <Icon icon={Sun03Icon} size={18} />
+            ) : (
+              <Icon icon={Moon02Icon} size={18} />
+            )}
           </button>
           <button
             type="button"
@@ -61,7 +66,7 @@ export function LandingPage({
         </p>
         <p className="landing-page__support">
           A community analytics layer for The Interfold — live operators, protocol events,
-          FOLD tokenomics, and apps like CRISP.
+          FOLD tokenomics, DAO drafts, and apps like CRISP.
         </p>
         <div className="landing-page__cta-row">
           <button
@@ -70,7 +75,7 @@ export function LandingPage({
             onClick={() => onEnterBoard("operators")}
           >
             Enter the board
-            <ArrowRight size={16} aria-hidden />
+            <Icon icon={ArrowRight01Icon} size={16} />
           </button>
           <button
             type="button"
@@ -158,6 +163,11 @@ export function LandingPage({
               body: "FOLD supply, allocations, and the unlock schedule in one place.",
             },
             {
+              id: "dao",
+              title: "DAO",
+              body: "Draft IPPs and finalized resolutions — starting with ciphernode rewards.",
+            },
+            {
               id: "apps",
               title: "DApps",
               body: "Applications on Interfold — including CRISP encrypted ballots on mainnet.",
@@ -172,7 +182,7 @@ export function LandingPage({
                 <span className="landing-page__path-title">{item.title}</span>
                 <span className="landing-page__path-body">{item.body}</span>
                 <span className="landing-page__path-go" aria-hidden>
-                  <ArrowRight size={14} />
+                  <Icon icon={ArrowRight01Icon} size={14} />
                 </span>
               </button>
             </li>

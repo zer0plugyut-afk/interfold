@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowLeft, AppWindow } from "lucide-react";
+import { ArrowLeft01Icon, BrowserIcon } from "@hugeicons/core-free-icons";
+import { Icon } from "./Icon";
 import { DAPPS } from "../lib/dapps";
 import { CrispPanel } from "./CrispPanel";
 
@@ -19,7 +20,7 @@ function DappIcon({ dapp }) {
   }
   return (
     <span className="dapp-card__logo dapp-card__logo--fallback" aria-hidden>
-      <AppWindow size={22} strokeWidth={1.6} />
+      <Icon icon={BrowserIcon} size={22} strokeWidth={1.6} />
     </span>
   );
 }
@@ -29,7 +30,7 @@ export function DappsPanel({ dappId, onSelectDapp, crispEvents, crispNetwork }) 
     return (
       <div className="dapps-panel">
         <button type="button" className="dapps-back" onClick={() => onSelectDapp(null)}>
-          <ArrowLeft size={14} aria-hidden />
+          <Icon icon={ArrowLeft01Icon} size={14} />
           All dapps
         </button>
         <div className="section-head">

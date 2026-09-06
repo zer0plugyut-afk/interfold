@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ExternalLink, Network, X } from "lucide-react";
+import { Cancel01Icon, HierarchySquare01Icon, LinkSquare01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "./Icon";
 import { shortAddr } from "../lib/format";
 import { useEnsNames } from "../hooks/useEnsNames";
 
@@ -140,7 +141,7 @@ export function OperatorNetworkViz({ operators, onClose }) {
             </p>
           </div>
           <button type="button" className="op-viz-close" onClick={requestClose} aria-label="Close">
-            <X size={18} aria-hidden />
+            <Icon icon={Cancel01Icon} size={18} />
           </button>
         </header>
 
@@ -291,7 +292,7 @@ export function OperatorNetworkViz({ operators, onClose }) {
             target="_blank"
             rel="noreferrer"
           >
-            docs.theinterfold.com <ExternalLink size={12} aria-hidden />
+            docs.theinterfold.com <Icon icon={LinkSquare01Icon} size={12} />
           </a>
         </footer>
       </aside>
@@ -307,7 +308,7 @@ function numTickets(o) {
 export function VisualizeNetworkButton({ onClick }) {
   return (
     <button type="button" className="op-viz-btn" onClick={onClick}>
-      <Network size={15} aria-hidden />
+      <Icon icon={HierarchySquare01Icon} size={15} />
       Visualize network
     </button>
   );

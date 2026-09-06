@@ -1,6 +1,14 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Check, Copy, ExternalLink, Heart, Layers, X } from "lucide-react";
+import {
+  Cancel01Icon,
+  Copy01Icon,
+  FavouriteIcon,
+  Layers01Icon,
+  LinkSquare01Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
 import { etherscanAddress } from "../lib/format";
+import { Icon } from "./Icon";
 
 export const DONATE_ADDRESS = "0xA9151da22b587654652A89AB61A5473DC218DedA";
 
@@ -83,13 +91,13 @@ export function DonateModal({ open, onClose }) {
         aria-labelledby={titleId}
       >
         <button type="button" className="donate-close" onClick={onClose} aria-label="Close">
-          <X size={18} aria-hidden />
+          <Icon icon={Cancel01Icon} size={18} />
         </button>
 
         <div className="donate-card">
           <div className="donate-card__glow" aria-hidden />
           <div className="donate-card__icon">
-            <Heart size={22} aria-hidden />
+            <Icon icon={FavouriteIcon} size={22} />
           </div>
           <p className="donate-card__kicker mono">Support the board</p>
           <h2 id={titleId}>Keep Interfold Board running</h2>
@@ -107,7 +115,11 @@ export function DonateModal({ open, onClose }) {
                 {t.src ? (
                   <img className="donate-chip__logo" src={t.src} alt="" width={16} height={16} />
                 ) : (
-                  <Layers className="donate-chip__logo donate-chip__logo--any" size={14} aria-hidden />
+                  <Icon
+                    icon={Layers01Icon}
+                    className="donate-chip__logo donate-chip__logo--any"
+                    size={14}
+                  />
                 )}
                 {t.label}
               </span>
@@ -120,7 +132,11 @@ export function DonateModal({ open, onClose }) {
             <code className="donate-addr mono">{DONATE_ADDRESS}</code>
             <div className="donate-addr-actions">
               <button type="button" className="donate-action" onClick={copyAddress}>
-                {copied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
+                {copied ? (
+                  <Icon icon={Tick02Icon} size={15} />
+                ) : (
+                  <Icon icon={Copy01Icon} size={15} />
+                )}
                 {copied ? "Copied" : "Copy address"}
               </button>
               <a
@@ -129,7 +145,7 @@ export function DonateModal({ open, onClose }) {
                 target="_blank"
                 rel="noreferrer"
               >
-                Etherscan <ExternalLink size={13} aria-hidden />
+                Etherscan <Icon icon={LinkSquare01Icon} size={13} />
               </a>
             </div>
           </div>
@@ -153,7 +169,7 @@ export function DonateButton({ onClick, className = "", iconOnly = false }) {
       aria-label={iconOnly ? "Donate" : undefined}
       title={iconOnly ? "Donate" : undefined}
     >
-      <Heart size={14} aria-hidden />
+      <Icon icon={FavouriteIcon} size={14} />
       {iconOnly ? null : "Donate"}
     </button>
   );

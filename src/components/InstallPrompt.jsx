@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "./Icon";
 import {
   closeInstall,
   getInstallPlatform,
@@ -124,7 +125,7 @@ export function InstallPrompt() {
           setVisible(false);
         }}
       >
-        <X size={16} aria-hidden />
+        <Icon icon={Cancel01Icon} size={16} />
       </button>
 
       <div className="install-prompt__row">

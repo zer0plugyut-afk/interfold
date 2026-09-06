@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "./Icon";
 import { etherscanAddress, etherscanTx, num, shortAddr } from "../lib/format";
 import { searchAddressActivity } from "../lib/supabaseData";
 import { EventDetailDrawer } from "./EventDetailDrawer";
@@ -56,7 +57,7 @@ export function AddressSearch({ boardData, onOpenResults, active }) {
 
   return (
     <form className={`addr-search${active ? " is-active" : ""}`} onSubmit={submit}>
-      <Search size={14} className="addr-search__icon" aria-hidden />
+      <Icon icon={Search01Icon} size={14} className="addr-search__icon" />
       <input
         className="addr-search__input"
         type="search"
@@ -80,7 +81,7 @@ export function AddressSearch({ boardData, onOpenResults, active }) {
             setErr(null);
           }}
         >
-          <X size={14} />
+          <Icon icon={Cancel01Icon} size={14} />
         </button>
       ) : null}
       <button type="submit" className="addr-search__go" disabled={busy}>

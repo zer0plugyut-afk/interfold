@@ -13,7 +13,8 @@ import {
 } from "recharts";
 import { formatUsd } from "../lib/foldPrice";
 import { formatFold } from "../lib/foldTokenomics";
-import { BarChart3, LineChart as LineChartIcon } from "lucide-react";
+import { ChartBarLineIcon, ChartLineData01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "./Icon";
 
 const FILTERS = [
   { id: "all", label: "All events", contract: null },
@@ -646,14 +647,14 @@ export function ChartsPanel({ timeline, priceUsd }) {
             className={`dash-tab ${style === "line" ? "is-active" : ""}`}
             onClick={() => setStyle("line")}
           >
-            <LineChartIcon size={14} /> Line
+            <Icon icon={ChartLineData01Icon} size={14} /> Line
           </button>
           <button
             type="button"
             className={`dash-tab ${style === "bar" ? "is-active" : ""}`}
             onClick={() => setStyle("bar")}
           >
-            <BarChart3 size={14} /> Bar
+            <Icon icon={ChartBarLineIcon} size={14} /> Bar
           </button>
         </div>
         <div className="event-filters">

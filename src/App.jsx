@@ -15,6 +15,8 @@ import {
   VisualizeNetworkButton,
 } from "./components/OperatorNetworkViz";
 import { TokenomicsPanel } from "./components/TokenomicsPanel";
+import { DaoPanel } from "./components/DaoPanel";
+import { DAO_PROPOSALS } from "./lib/daoProposals";
 import { Sidebar } from "./components/Sidebar";
 import { SidebarFoldPriceWidget } from "./components/SidebarFoldPriceWidget";
 import { useBoardData } from "./hooks/useBoardData";
@@ -24,14 +26,16 @@ import { getDapp } from "./lib/dapps";
 import { formatPriceUsd } from "./lib/foldPrice";
 import { num } from "./lib/format";
 import { enrichOperatorsWithExits } from "./lib/operatorExits";
-import { Moon, Sun } from "lucide-react";
+import { Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { FoldIcon } from "./components/FoldIcon";
+import { Icon } from "./components/Icon";
 
 const TITLES = {
   operators: ["Operators", "Network-wide ciphernode set"],
   events: ["Events", "Decoded protocol logs"],
   charts: ["Charts", "Fees, rewards & activity"],
   tokenomics: ["Tokenomics", "FOLD supply & unlock schedule"],
+  dao: ["DAO", "Drafts, votes & resolutions"],
   apps: ["DApps", "Applications on InterFold"],
   search: ["Search", "Address activity"],
 };
@@ -88,6 +92,7 @@ export default function App() {
     () => ({
       operators: operators.length,
       events: data?.timeline?.length ?? 0,
+      dao: DAO_PROPOSALS.length,
     }),
     [operators, data]
   );
@@ -196,7 +201,11 @@ export default function App() {
                 aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
                 title={theme === "dark" ? "Light mode" : "Dark mode"}
               >
-                {theme === "dark" ? <Sun size={18} aria-hidden /> : <Moon size={18} aria-hidden />}
+                {theme === "dark" ? (
+                  <Icon icon={Sun03Icon} size={18} />
+                ) : (
+                  <Icon icon={Moon02Icon} size={18} />
+                )}
               </button>
             </div>
           </div>
@@ -244,7 +253,8 @@ export default function App() {
               panel === "charts" ||
               panel === "apps" ||
               panel === "search" ||
-              panel === "tokenomics"
+              panel === "tokenomics" ||
+              panel === "dao"
                 ? "main-panel--fill"
                 : ""
             }`}
@@ -302,6 +312,12 @@ export default function App() {
             {panel === "tokenomics" && (
               <section className="panel is-active panel--fill">
                 <TokenomicsPanel />
+              </section>
+            )}
+
+            {panel === "dao" && (
+              <section className="panel is-active panel--fill">
+                <DaoPanel priceUsd={priceUsd} />
               </section>
             )}
 

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Bar, BarChart, ResponsiveContainer, Cell } from "recharts";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { ChartDecreaseIcon, ChartIncreaseIcon } from "@hugeicons/core-free-icons";
+import { Icon } from "./Icon";
 import { formatPriceUsd } from "../lib/foldPrice";
 import { useFoldPrice } from "../hooks/useFoldPrice";
 import { FoldIcon } from "./FoldIcon";
@@ -49,7 +50,11 @@ export function SidebarFoldPriceWidget({ compact = false }) {
           FOLD
         </span>
         <span className={`fold-price-widget__pct ${up ? "is-up" : "is-down"}`}>
-          {up ? <TrendingUp size={11} aria-hidden /> : <TrendingDown size={11} aria-hidden />}
+          {up ? (
+            <Icon icon={ChartIncreaseIcon} size={11} />
+          ) : (
+            <Icon icon={ChartDecreaseIcon} size={11} />
+          )}
           {loading && priceUsd == null ? "—" : formatPct(change24h)}
         </span>
       </div>

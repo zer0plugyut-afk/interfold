@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CRISP_FILTER_META } from "../lib/icons";
+import { Icon } from "./Icon";
 import { etherscanTx, num, shortAddr } from "../lib/format";
 import { EventDetailDrawer } from "./EventDetailDrawer";
 
@@ -166,7 +167,7 @@ export function CrispPanel({ events, network }) {
       </div>
 
       <div className="event-filters" role="tablist" aria-label="CRISP contract filter">
-        {CRISP_FILTER_META.map(({ id, label, Icon }) => (
+        {CRISP_FILTER_META.map(({ id, label, icon }) => (
           <button
             key={id}
             type="button"
@@ -175,7 +176,7 @@ export function CrispPanel({ events, network }) {
             className={`filter-chip filter-chip--icon ${filter === id ? "is-active" : ""}`}
             onClick={() => setFilter(id)}
           >
-            <Icon size={16} strokeWidth={2} aria-hidden />
+            <Icon icon={icon} size={16} strokeWidth={2} />
             <span>{label}</span>
             <span className="filter-chip__n">{counts[id] || 0}</span>
           </button>

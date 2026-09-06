@@ -1,7 +1,8 @@
-import { Moon, Sun } from "lucide-react";
+import { Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
 import { NAV_ICONS } from "../lib/icons";
 import { DAPPS } from "../lib/dapps";
 import { DonateButton } from "./DonateModal";
+import { Icon } from "./Icon";
 import { SidebarFoldPriceWidget } from "./SidebarFoldPriceWidget";
 
 export function Sidebar({ panel, onNavigate, onGoHome, counts, theme, onToggleTheme, onDonate }) {
@@ -10,6 +11,7 @@ export function Sidebar({ panel, onNavigate, onGoHome, counts, theme, onToggleTh
     { id: "events", label: "Events", count: counts.events },
     { id: "charts", label: "Charts", count: null },
     { id: "tokenomics", label: "Tokenomics", count: null },
+    { id: "dao", label: "DAO", count: counts.dao },
     { id: "apps", label: "DApps", count: DAPPS.length },
   ];
 
@@ -31,7 +33,7 @@ export function Sidebar({ panel, onNavigate, onGoHome, counts, theme, onToggleTh
 
       <nav className="sidebar__nav" aria-label="Sections">
         {items.map((item) => {
-          const Icon = NAV_ICONS[item.id];
+          const icon = NAV_ICONS[item.id];
           const active = panel === item.id;
           return (
             <button
@@ -42,10 +44,10 @@ export function Sidebar({ panel, onNavigate, onGoHome, counts, theme, onToggleTh
               aria-current={active ? "page" : undefined}
             >
               <Icon
+                icon={icon}
                 className={`nav-icon-svg ${active ? "is-active" : ""}`}
                 size={40}
                 strokeWidth={1.6}
-                aria-hidden
               />
               <span className="nav-btn__label">
                 <span className="nav-btn__title">{item.label}</span>
@@ -66,7 +68,11 @@ export function Sidebar({ panel, onNavigate, onGoHome, counts, theme, onToggleTh
           aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
           title={theme === "dark" ? "Light mode" : "Dark mode"}
         >
-          {theme === "dark" ? <Sun size={18} aria-hidden /> : <Moon size={18} aria-hidden />}
+          {theme === "dark" ? (
+            <Icon icon={Sun03Icon} size={18} />
+          ) : (
+            <Icon icon={Moon02Icon} size={18} />
+          )}
         </button>
       </div>
     </aside>

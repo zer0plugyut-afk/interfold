@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CONTRACT_FILTER_META } from "../lib/icons";
+import { Icon } from "./Icon";
 import {
   countByPhase,
   eventMatchesPhase,
@@ -274,7 +275,7 @@ function TreeEventFilters({ contract, phase, onContractChange, onPhaseChange, co
         aria-label="Contract filter"
         ref={parentRowRef}
       >
-        {CONTRACT_FILTER_META.map(({ id, label, Icon }) => {
+        {CONTRACT_FILTER_META.map(({ id, label, icon }) => {
           const active = contract === id;
           return (
             <button
@@ -286,7 +287,7 @@ function TreeEventFilters({ contract, phase, onContractChange, onPhaseChange, co
               className={`filter-chip filter-chip--icon ${active ? "is-active" : ""}`}
               onClick={() => onContractChange(id)}
             >
-              <Icon size={16} strokeWidth={2} aria-hidden />
+              <Icon icon={icon} size={16} strokeWidth={2} />
               <span>{label}</span>
               <span className="filter-chip__n">{contractCounts[id] || 0}</span>
             </button>
