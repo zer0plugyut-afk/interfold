@@ -9,6 +9,10 @@ import { Gauges } from "./components/Gauges";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { LandingPage } from "./components/LandingPage";
 import { OperatorsTable } from "./components/OperatorsTable";
+import {
+  OperatorNetworkViz,
+  VisualizeNetworkButton,
+} from "./components/OperatorNetworkViz";
 import { TokenomicsPanel } from "./components/TokenomicsPanel";
 import { Sidebar } from "./components/Sidebar";
 import { SidebarFoldPriceWidget } from "./components/SidebarFoldPriceWidget";
@@ -57,6 +61,7 @@ export default function App() {
   const [dappId, setDappId] = useState(initial.dappId);
   const [eventFilter, setEventFilter] = useState("all");
   const [searchPayload, setSearchPayload] = useState(null);
+  const [showOpViz, setShowOpViz] = useState(false);
 
   useEffect(() => {
     if (view === "landing") {
@@ -233,14 +238,23 @@ export default function App() {
           >
             {panel === "operators" && (
               <section className="panel is-active panel--fill">
-                <div className="section-head">
-                  <h2>Operator board</h2>
-                  <p>
-                    Tickets = sortition entries from{" "}
-                    <span className="hint">tFOLD balance ÷ ticket price (1,000)</span>.
-                  </p>
+                <div className="section-head section-head--row">
+                  <div>
+                    <h2>Operator board</h2>
+                    <p>
+                      Tickets = sortition entries from{" "}
+                      <span className="hint">tFOLD balance ÷ ticket price (1,000)</span>.
+                    </p>
+                  </div>
+                  <VisualizeNetworkButton onClick={() => setShowOpViz(true)} />
                 </div>
                 <OperatorsTable operators={operators} priceUsd={priceUsd} />
+                {showOpViz ? (
+                  <OperatorNetworkViz
+                    operators={operators}
+                    onClose={() => setShowOpViz(false)}
+                  />
+                ) : null}
               </section>
             )}
 

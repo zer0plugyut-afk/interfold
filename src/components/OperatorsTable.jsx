@@ -19,7 +19,7 @@ function AddrCell({ address, ens, trailing, sub }) {
     <>
       <div className="op-addr-row">
         <a
-          className={`addr${ens ? " addr--ens" : ""}`}
+          className={`addr addr--op${ens ? " addr--ens" : ""}`}
           href={etherscanAddress(address)}
           target="_blank"
           rel="noreferrer"

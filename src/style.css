@@ -2025,9 +2025,16 @@ th {
   text-decoration: underline;
 }
 
+.addr--op {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+
 .addr--ens {
   font-variant-numeric: normal;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.015em;
 }
 
 .ticket-cell {
@@ -2068,6 +2075,621 @@ th {
 
 .op-row.is-exiting .ticket-cell__sub {
   color: color-mix(in srgb, var(--bad) 70%, var(--muted));
+}
+
+.op-viz-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  background: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, var(--line));
+  cursor: pointer;
+}
+
+.op-viz-btn:hover {
+  filter: brightness(1.06);
+}
+
+.op-viz-root {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.op-viz-root.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.op-viz-backdrop {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  border: 0;
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+  cursor: pointer;
+}
+
+.op-viz-panel {
+  position: relative;
+  z-index: 1;
+  width: min(1100px, calc(100vw - 48px));
+  max-height: min(88vh, 820px);
+  overflow: auto;
+  display: grid;
+  gap: 14px;
+  padding: 20px 22px 18px;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 55%),
+    var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px color-mix(in srgb, black 45%, transparent);
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.22s ease;
+}
+
+.op-viz-root.is-open .op-viz-panel {
+  transform: none;
+}
+
+.op-viz-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.op-viz-kicker {
+  margin: 0 0 4px;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.op-viz-head h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+  letter-spacing: -0.02em;
+}
+
+.op-viz-lede {
+  margin: 8px 0 0;
+  max-width: 42rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.op-viz-close {
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.op-viz-close:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+
+.op-viz-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.op-viz-stats span {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.op-viz-stats--active {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--line));
+}
+
+.op-viz-stats--reg {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, var(--line));
+}
+
+.op-viz-stats--exit {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 40%, var(--line));
+}
+
+.op-viz-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(260px, 0.95fr);
+  gap: 16px;
+  align-items: stretch;
+  min-height: 440px;
+}
+
+.op-viz-map {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.op-viz-svg {
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 520px;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--ok) 7%, transparent), transparent 62%),
+    color-mix(in srgb, var(--ink) 35%, transparent);
+  border: 1px solid var(--line);
+  overflow: visible;
+}
+
+.op-viz-core-glow {
+  animation: op-viz-breathe 7.5s ease-in-out infinite;
+}
+
+.op-viz-core {
+  fill: color-mix(in srgb, var(--accent) 85%, white);
+  stroke: color-mix(in srgb, var(--ok) 50%, transparent);
+  stroke-width: 0.4;
+}
+
+.op-viz-core-label {
+  fill: var(--ink);
+  font-family: var(--display);
+  font-size: 3.4px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.op-viz-core-sub {
+  fill: color-mix(in srgb, var(--ink) 75%, transparent);
+  font-family: var(--mono);
+  font-size: 1.8px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.op-viz-node-g {
+  opacity: 1;
+  animation: op-viz-enter 0.65s ease both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.op-viz-svg.is-focusing .op-viz-node-g {
+  animation: none;
+  opacity: 0.22;
+}
+
+.op-viz-svg.is-focusing .op-viz-node-g.is-focus {
+  opacity: 1;
+}
+
+.op-viz-spoke {
+  stroke: color-mix(in srgb, var(--muted) 28%, transparent);
+  stroke-width: 0.22;
+}
+
+.op-viz-spoke.is-active {
+  stroke: color-mix(in srgb, var(--ok) 38%, transparent);
+}
+
+.op-viz-spoke.is-reg {
+  stroke: color-mix(in srgb, var(--warn) 22%, transparent);
+  stroke-dasharray: 0.7 0.9;
+}
+
+.op-viz-spoke.is-exit {
+  stroke: color-mix(in srgb, var(--bad) 38%, transparent);
+  stroke-dasharray: 0.9 1.3;
+}
+
+.op-viz-flow {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 0.55;
+  pointer-events: none;
+}
+
+.op-viz-flow.is-active {
+  stroke: var(--ok);
+  stroke-dasharray: 1.8 22;
+  animation: op-viz-flow-in var(--flow, 5s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  opacity: 0.75;
+}
+
+.op-viz-flow.is-exit {
+  stroke: var(--bad);
+  stroke-dasharray: 1.4 20;
+  animation: op-viz-flow-out var(--flow, 4.4s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  opacity: 0.7;
+}
+
+.op-viz-halo {
+  fill: transparent;
+  stroke-width: 0.45;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.op-viz-halo.is-active {
+  stroke: var(--ok);
+  animation: op-viz-halo-active var(--pulse, 5.4s) ease-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.op-viz-halo.is-reg {
+  stroke: var(--warn);
+  animation: op-viz-halo-reg var(--pulse, 6.8s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.op-viz-halo.is-exit {
+  stroke: var(--bad);
+  animation: op-viz-halo-exit var(--pulse, 4.6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.op-viz-node {
+  fill: color-mix(in srgb, var(--muted) 55%, var(--panel));
+  stroke: color-mix(in srgb, var(--text) 25%, transparent);
+  stroke-width: 0.35;
+  cursor: pointer;
+}
+
+.op-viz-node.is-reg {
+  fill: color-mix(in srgb, var(--warn) 58%, var(--panel));
+  stroke: color-mix(in srgb, var(--warn) 70%, transparent);
+  animation: op-viz-idle 5.6s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.op-viz-node.is-active {
+  fill: color-mix(in srgb, var(--ok) 74%, var(--panel));
+  stroke: var(--ok);
+}
+
+.op-viz-node.is-exit {
+  fill: color-mix(in srgb, var(--bad) 58%, var(--panel));
+  stroke: var(--bad);
+  animation: op-viz-drift 7.2s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.op-viz-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  color: var(--muted);
+}
+
+.op-viz-key li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.op-viz-key li::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.op-viz-key .is-active::before {
+  background: var(--ok);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 70%, transparent);
+  animation: op-viz-dot-live 2.8s ease-in-out infinite;
+}
+
+.op-viz-key .is-reg::before {
+  background: var(--warn);
+}
+
+.op-viz-key .is-exit::before {
+  background: var(--bad);
+  animation: op-viz-dot-exit 2.4s ease-in-out infinite;
+}
+
+.op-viz-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  max-height: 520px;
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.op-viz-legend__item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.78rem;
+  cursor: default;
+  transition: background 0.18s ease;
+}
+
+.op-viz-legend__item:last-child {
+  border-bottom: 0;
+}
+
+.op-viz-legend__item.is-focus,
+.op-viz-legend__item:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.op-viz-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.op-viz-legend__item.is-active .op-viz-legend__dot {
+  background: var(--ok);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--ok) 65%, transparent);
+  animation: op-viz-dot-live 2.8s ease-in-out infinite;
+}
+
+.op-viz-legend__item.is-reg .op-viz-legend__dot {
+  background: var(--warn);
+}
+
+.op-viz-legend__item.is-exit .op-viz-legend__dot {
+  background: var(--bad);
+  animation: op-viz-dot-exit 2.4s ease-in-out infinite;
+}
+
+.op-viz-legend__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.op-viz-legend__meta {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+@keyframes op-viz-breathe {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes op-viz-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes op-viz-flow-in {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes op-viz-flow-out {
+  to {
+    stroke-dashoffset: 22;
+  }
+}
+
+@keyframes op-viz-halo-active {
+  0% {
+    opacity: 0.45;
+    stroke-width: 0.55;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    stroke-width: 0.15;
+  }
+}
+
+@keyframes op-viz-halo-reg {
+  0%,
+  100% {
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
+@keyframes op-viz-halo-exit {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes op-viz-idle {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes op-viz-drift {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes op-viz-dot-live {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes op-viz-dot-exit {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.op-viz-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.op-viz-chip {
+  display: inline-block;
+  padding: 4px 9px;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.op-viz-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  color: var(--accent);
+}
+
+.op-viz-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.op-viz-docs {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.op-viz-docs:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .op-viz-panel {
+    width: min(100%, calc(100vw - 24px));
+    max-height: 90vh;
+    padding: 16px;
+  }
+
+  .op-viz-stage {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .op-viz-svg {
+    max-height: 320px;
+  }
+
+  .op-viz-legend {
+    max-height: min(280px, 36vh);
+  }
+
+  .section-head--row {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .op-viz-root,
+  .op-viz-panel {
+    transition: none;
+  }
+
+  .op-viz-core-glow,
+  .op-viz-node-g,
+  .op-viz-flow,
+  .op-viz-halo,
+  .op-viz-node.is-reg,
+  .op-viz-node.is-exit,
+  .op-viz-key .is-active::before,
+  .op-viz-key .is-exit::before,
+  .op-viz-legend__item.is-active .op-viz-legend__dot,
+  .op-viz-legend__item.is-exit .op-viz-legend__dot {
+    animation: none !important;
+  }
+
+  .op-viz-node-g,
+  .op-viz-halo.is-active,
+  .op-viz-halo.is-reg,
+  .op-viz-halo.is-exit {
+    opacity: 1;
+  }
+
+  .op-viz-halo {
+    opacity: 0.2;
+  }
 }
 
 .bar {
