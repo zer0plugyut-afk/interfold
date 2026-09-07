@@ -4576,6 +4576,12 @@ th {
   color: var(--accent);
 }
 
+.dao-revised {
+  margin: 8px 0 0;
+  font-size: 0.66rem;
+  color: var(--warn);
+}
+
 .dao-source {
   appearance: none;
   display: inline-flex;

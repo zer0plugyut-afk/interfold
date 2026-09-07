@@ -208,6 +208,7 @@ function DaoDetail({ proposal: p, priceUsd }) {
               <Icon icon={Calendar03Icon} size={13} /> {p.dateLabel}
             </span>
           </div>
+          {p.revisedNote ? <p className="dao-revised mono">{p.revisedNote}</p> : null}
         </div>
         <a className="dao-source" href={p.sourceUrl} target="_blank" rel="noreferrer">
           Open draft
@@ -271,20 +272,19 @@ function DaoDetail({ proposal: p, priceUsd }) {
 
       <section className="dao-block">
         <h4>
-          <Icon icon={ChartBarLineIcon} size={16} /> Ticket-weighted split
+          <Icon icon={ChartBarLineIcon} size={16} /> Ticket-block accrual
         </h4>
-        <p className="dao-formula mono">
-          rewardᵢ = floor( 2,000,000 × ticketsᵢ ÷ Σ tickets )
-        </p>
+        <p className="dao-formula mono">{p.accrualFormula || "rewardᵢ = 2,000,000 × ticketBlocksᵢ ÷ Σ ticketBlocks"}</p>
+        {p.accrualFormulaHint ? <p className="dao-note">{p.accrualFormulaHint}</p> : null}
         <div className="dao-table-wrap">
           <table className="dao-table">
             <caption className="mono">
-              Same 2M FOLD epoch pool priced per ticket (equal-ticket case = per-node figure)
+              Same 2M FOLD epoch pool — payout per ticket held the full epoch (~40,320 blocks)
             </caption>
             <thead>
               <tr>
-                <th>Active ticket pool</th>
-                <th>Payout / ticket</th>
+                <th>Active ticket pool (full epoch)</th>
+                <th>Payout / full-epoch ticket</th>
                 <th>10-ticket node</th>
                 <th>Spot / ticket</th>
               </tr>
@@ -303,8 +303,9 @@ function DaoDetail({ proposal: p, priceUsd }) {
         </div>
         <p className="dao-note">
           At {p.budget.ticketStake}, doubling sUSDS at stake doubles the reward share.{" "}
-          {p.budget.bondNote} The 30-day VE lock is longer than one 14-day epoch, so rewards
-          from one settlement cannot be sold before the next snapshot.
+          {p.budget.bondNote} A ticket held only part of the epoch earns that fraction of a
+          full-epoch share. The 30-day VE lock means settlement rewards cannot be recycled into
+          tickets before unlock (~2 epochs later).
         </p>
       </section>
 

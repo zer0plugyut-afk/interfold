@@ -17,11 +17,14 @@ export const DAO_RULES = [
   { id: "path", label: "Lifecycle", value: "Vote → Foundation → Execute" },
 ];
 
-/** Ticket-weighted split of a 2,000,000 FOLD epoch pool. */
+/** Ticket-block split of a 2,000,000 FOLD epoch pool (full-epoch ticket held). */
 export const EPOCH_POOL = 2_000_000;
 export const PROGRAM_POOL = 12_000_000;
 export const TOTAL_SUPPLY = 1_200_000_000;
+/** 14-day epoch at ~30s blocks. */
+export const EPOCH_BLOCKS = 40_320;
 
+/** Indicative payout if that ticket count is held the full epoch. */
 export const TICKET_SCENARIOS = [
   { tickets: 10, perTicket: 200_000 },
   { tickets: 100, perTicket: 20_000 },
@@ -42,43 +45,44 @@ export const DAO_PROPOSALS = [
     dateLabel: "September 2026",
     sourceLabel: "Fileverse draft",
     sourceUrl: DAO_SOURCE_FILEVERSE,
-    wordCount: 1266,
+    revisedNote:
+      "Updated from epoch-end snapshot to block-by-block ticket weighting (ticket-blocks).",
     summary:
-      "A time-boxed FOLD reward for ciphernode operators. 12,000,000 FOLD (1.0% of the 1.2B supply) from the Foundation treasury, paid in 6 biweekly batches to operators active at each epoch’s end-snapshot, as 30-day VE-locked FOLD via createLockFor(). Rewards count as voting power. Manual tracking — no new contracts or emissions.",
+      "A time-boxed FOLD reward for ciphernode operators. 12,000,000 FOLD (1.0% of the 1.2B supply) from the Foundation treasury, paid in 6 biweekly batches, in proportion to each operator’s ticket-block accrual (tickets × blocks held across the epoch). Paid as VE-locked FOLD via createLockFor(), so rewards immediately count as voting power and carry a 30-day unlock. Tracking is manual — no new contracts, no new emissions.",
     motivation:
-      "The network — including its own CRISP governance rounds — needs ciphernodes online. E3 requests are currently paused or minimal, so the existing fee-share rewards (BondingRegistry.distributeRewards) cannot pay for availability. This program bridges that gap on a fixed clock and budget.",
+      "The network — including its own CRISP governance rounds — needs ciphernodes online. E3 requests are currently paused or minimal, so the existing fee-share rewards (BondingRegistry.distributeRewards) pay almost nothing. This program closes that availability gap bounded in time and budget.",
     conclusion:
-      "The network needs ciphernodes online now, and usage revenue cannot pay for that yet. This proposal spends 1% of supply over 12 weeks, run on existing tooling and on-chain reads, with audit via IPFS-pinned settlement sheets.",
+      "The network needs ciphernodes online now, and usage revenue can’t pay for that yet. This proposal spends 1% of supply over 12 weeks, run on existing tooling and on-chain reads, with audit via IPFS-pinned settlement sheets. Parameters are fixed at execution; changes go through the normal governance path.",
     metrics: [
       { id: "pool", label: "Reward pool", value: "12,000,000", unit: "FOLD", hint: "1.0% of 1.2B supply" },
-      { id: "epochs", label: "Epochs", value: "6", unit: "× 14 days", hint: "12 weeks from T0" },
-      { id: "batch", label: "Per epoch", value: "2,000,000", unit: "FOLD", hint: "Ticket-weighted split" },
+      { id: "epochs", label: "Epochs", value: "6", unit: "× 14 days", hint: "~40,320 blocks each" },
+      { id: "batch", label: "Per epoch", value: "2,000,000", unit: "FOLD", hint: "Ticket-block weighted" },
       { id: "lock", label: "VE lock", value: "30", unit: "days", hint: "createLockFor() on receipt" },
     ],
     design: [
       {
         title: "Program window",
-        body: "12 weeks from T0 — the protocol’s mainnet launch: the deployment block of the Interfold mainnet contract, verifiable on-chain. The earlier FOLD mint / TGE block is not the reference.",
+        body: "12 weeks from T0 — the protocol’s mainnet launch (Interfold mainnet deployment block, verifiable on-chain; not the FOLD mint/TGE block) — in 6 epochs of 14 days. Retroactive by design: operators who stood up ciphernodes at launch with no subsidy promised are rewarded. Epochs already elapsed at execution settle in sequence as distinct published events; remaining epochs then run on the biweekly cadence.",
       },
       {
         title: "Eligibility (“active”)",
-        body: "An operator accrues an epoch if, at the epoch’s end block, it is registered in the CiphernodeRegistry; bonded at or above the active-maintenance floor (isCiphernodeBonded); holds the minimum sortition tickets; and is not banned by the SlashingManager.",
+        body: "An operator is active at a given block if it is registered in the CiphernodeRegistry; bonded at or above the active-maintenance floor (isCiphernodeBonded); holds the minimum sortition tickets; and is not banned by the SlashingManager. Predicate failures at a given block contribute 0 for that block’s accrual.",
       },
       {
-        title: "Accrual (ticket-weighted)",
-        body: "An epoch’s 2,000,000 FOLD is divided by the total tickets held across all active operators. Each active operator receives 2,000,000 ÷ Σ tickets × own tickets, floored to whole FOLD.",
+        title: "Accrual (ticket-blocks, per-block)",
+        body: "The epoch’s 2,000,000 FOLD is split in proportion to each operator’s ticket-block total: the sum, over every block of the epoch, of the operator’s ticket balance, with any inactive block contributing 0. A ticket held the whole epoch earns that epoch’s full block count (~40,320 at 30s blocks); one staked only at the final block earns 1 — so a last-block snipe is exactly priced. Settlement remains a recomputable script over archive-node state.",
       },
       {
         title: "Transparency",
-        body: "Each epoch the Foundation publishes a settlement sheet on IPFS and posts its CID: snapshot block, active operators with ticket balances and predicate values. The sheet is recomputable from the on-chain snapshot.",
+        body: "Each epoch the Foundation publishes a settlement sheet on IPFS and posts its CID: epoch start/end blocks; each operator’s per-block ticket series (or at least ticket-block total and 24h boundary state); effective counts; the pool total; and each entitlement. Corrected sheets are allowed before settlement; network-state disputes settle by the on-chain record.",
       },
       {
         title: "Settlement",
-        body: "6 batches of 2,000,000 FOLD, each after that sheet’s 48h dispute window. Payouts are VE-locked FOLD: the treasury calls createLockFor() on the Vote Escrow contract for each recipient. Unlock dates stagger as receipts land.",
+        body: "6 batches of 2,000,000 FOLD, each after that sheet’s 48h dispute window. Payouts are VE-locked FOLD: treasury createLockFor() for each recipient (30-day lock). Locked FOLD counts as voting power on distribution; no recipient can sell until unlock. No claim flow and no new contract.",
       },
       {
         title: "Why biweekly batches",
-        body: "The 30-day VE lock is the primary sell-pressure control — no reward can be sold on its distribution date. Six public sheets keep each sell event individually visible instead of one lump sum.",
+        body: "The 30-day VE lock is the primary sell-pressure control. Batching keeps six sheets and six payments small and legible, and bounds treasury ops. Weekly would double settlement cost with the same income per period. Schedule parameters can tweak; the accrual rule does not.",
       },
     ],
     budget: {
@@ -86,54 +90,80 @@ export const DAO_PROPOSALS = [
       supplyShare: 0.01,
       source: "Foundation treasury — no new emissions, no mint.",
       buyNote:
-        "It will be necessary for the Foundation to purchase ~$250k–$300k worth of FOLD from the market to fund the program.",
+        "The Foundation will need to purchase ~$250k–$300k of FOLD on the open market for liquid funding. The treasury holds 39.06% of supply with linear unlock from Sep 1, 2026; remaining requirement comes from that supply as it unlocks.",
       ticketStake: "1,000 sUSDS per ticket",
       bondNote: "Each ticket sits on top of the 32,000 FOLD bond (both slashable).",
     },
+    accrualFormula: "rewardᵢ = 2,000,000 × ticketBlocksᵢ ÷ Σ ticketBlocks",
+    accrualFormulaHint:
+      "ticketBlocksᵢ = Σ over epoch blocks of ticketsᵢ(b) while active (else 0). Full-epoch ticket ≈ 40,320 ticket-blocks.",
     parameters: [
-      { label: "Window", value: "12 weeks from T0 (Interfold mainnet deployment block) in 6 × 14-day epochs" },
-      { label: "Pool", value: "12,000,000 FOLD (1.0% of total supply), from the Foundation treasury" },
-      { label: "Per epoch", value: "2,000,000 FOLD, split proportionally to tickets among operators active at the epoch end-block" },
-      { label: "“Active”", value: "Registered, bonded ≥ active-maintenance floor, minimum tickets, not banned" },
-      { label: "Settlement", value: "Manual: IPFS-pinned sheet → 48h dispute window → treasury createLockFor() (30-day VE lock)" },
-      { label: "Timeline", value: "Overdue epochs settle in sequence at execution; remaining epochs on cadence" },
-      { label: "End", value: "Program ends after Epoch 6; any change after execution requires a new proposal" },
+      {
+        label: "Window",
+        value: "12 weeks from T0 (Interfold mainnet deployment block) in 6 × 14-day epochs",
+      },
+      {
+        label: "Pool",
+        value: "12,000,000 FOLD (1.0% of total supply), from the Foundation treasury",
+      },
+      {
+        label: "Per epoch",
+        value:
+          "2,000,000 FOLD, split in proportion to ticket-blocks accrued per operator over the epoch (tickets × blocks, per-block)",
+      },
+      {
+        label: "“Active”",
+        value: "Registered, bonded ≥ active-maintenance floor, minimum tickets, not banned (checked per block)",
+      },
+      {
+        label: "Settlement",
+        value:
+          "Manual: IPFS-pinned sheet per epoch → 48h dispute window → treasury createLockFor() (30-day VE lock)",
+      },
+      {
+        label: "Timeline",
+        value: "Overdue epochs settle in sequence at execution; remaining epochs on cadence",
+      },
+      {
+        label: "End",
+        value: "Program ends after Epoch 6; any change after execution requires a new proposal",
+      },
     ],
     risks: [
       {
         risk: "12M FOLD sold in one window",
         mitigation:
-          "30-day VE lock (rewards cannot be sold on the distribution date) plus 6 × 2M batches, each with a public settlement sheet ahead of its payout.",
+          "30-day VE lock (rewards can’t be sold on distribution date) plus 6 × 2M batches, each with a public settlement sheet ahead of its payout.",
       },
       {
         risk: "Reward economy farmed by ticket sybils",
         mitigation:
-          "Tickets are the expensive input: each requires 1,000 sUSDS at risk, on top of the 32,000 FOLD bond (both slashable). Proportional accrual means cheap low-stake sybils earn tiny shares by construction.",
+          "Tickets are the expensive input: 1,000 sUSDS at risk per ticket, on top of the 32,000 FOLD bond (both slashable). Proportional accrual means cheap low-stake sybils earn tiny shares; an adversary must risk more sUSDS than honest stake — with slashing exposure. Caps/weighting left for a later iteration.",
       },
       {
-        risk: "Register / unregister around the snapshot",
+        risk: "Last-minute register / unregister",
         mitigation:
-          "Epoch-end snapshot gives ~2 weeks of notice; a single-block game is accepted rather than fought with new machinery.",
+          "Credits tickets only from the block they exist — a last-block snipe earns 1/40,320 of a full-epoch share per ticket (~30s blocks); fully on-chain and retroactively verifiable.",
       },
       {
         risk: "Manual bookkeeping error",
         mitigation:
-          "IPFS-pinned sheet (CID posted) is recomputable from the on-chain snapshot; 48h dispute window; payout txs recorded against the CID.",
+          "IPFS-pinned sheet (CID posted) recomputable from per-block on-chain state; 48h dispute window; payout txs recorded against the CID.",
       },
       {
         risk: "Rewards funding new voting power",
         mitigation:
-          "Expected and intended: rewards are VE-locked FOLD and count as voting power on distribution (delegated to the recipient). 12M of new committed FOLD is a deliberate increase in governance weight.",
+          "Expected and intended: VE-locked FOLD counts as voting power on distribution (delegated to the recipient). 12M of new committed FOLD is a deliberate incentive.",
       },
       {
         risk: "Slow vote collapses epochs into one week of payments",
         mitigation:
-          "Acceptable for a first iteration and no pool or rule changes; if it happens, publish the compressed batch schedule with dates so the sell events stay individually visible.",
+          "Acceptable for a first iteration with no pool or rule changes; if it happens, publish the compressed batch schedule with dates so sell events stay individually visible.",
       },
       {
         risk: "Slashing during the program",
         mitigation:
-          "Unchanged — a slashed or banned operator is excluded from the next snapshot onward; prior accruals stand.",
+          "Unchanged — a slashed or banned operator accrues 0 from the ban block onward; prior accruals stand.",
       },
     ],
     future: [
