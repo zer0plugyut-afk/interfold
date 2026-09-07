@@ -33,3 +33,20 @@ export function formatUnlockAt(unix) {
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleString();
 }
+
+/**
+ * Compact local datetime for operator / event sublines.
+ * @param {string|number|Date|null|undefined} isoOrMs
+ */
+export function formatWhenShort(isoOrMs) {
+  if (isoOrMs == null || isoOrMs === "") return null;
+  const d = isoOrMs instanceof Date ? isoOrMs : new Date(isoOrMs);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}

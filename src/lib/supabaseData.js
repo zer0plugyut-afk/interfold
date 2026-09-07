@@ -45,7 +45,54 @@ function mapOperator(o) {
     meetsActiveFloor: o.meets_active_floor,
     addedBlock: o.added_block,
     addedTx: o.added_tx,
+    addedTimestamp: o.added_timestamp || o.addedTimestamp || null,
   };
+}
+
+/**
+ * Attach addedTimestamp from CiphernodeAdded / BondOwnerSet rows (already in if_events).
+ * Prefer tx match, then address+block, then address alone.
+ */
+function enrichOperatorsWithAddedTime(operators, addedEvents) {
+  if (!operators?.length || !addedEvents?.length) return operators || [];
+
+  const byTx = new Map();
+  const byAddrBlock = new Map();
+  const byAddr = new Map();
+
+  for (const e of addedEvents) {
+    const ts = e.block_timestamp || e.blockTimestamp || null;
+    if (!ts) continue;
+    const tx = String(e.tx_hash || e.txHash || "").toLowerCase();
+    const block = Number(e.block_number ?? e.blockNumber);
+    const addr = String(
+      e.args?.node || e.args?.ciphernode || e.args?.operator || ""
+    ).toLowerCase();
+
+    if (tx) {
+      const prev = byTx.get(tx);
+      if (!prev || block >= Number(prev.block || 0)) byTx.set(tx, { ts, block });
+    }
+    if (addr && Number.isFinite(block)) {
+      const key = `${addr}:${block}`;
+      byAddrBlock.set(key, ts);
+      const prev = byAddr.get(addr);
+      if (!prev || block >= Number(prev.block || 0)) byAddr.set(addr, { ts, block });
+    }
+  }
+
+  return operators.map((o) => {
+    if (o.addedTimestamp) return o;
+    const tx = String(o.addedTx || "").toLowerCase();
+    const addr = String(o.address || "").toLowerCase();
+    const block = Number(o.addedBlock);
+    const fromTx = tx ? byTx.get(tx) : null;
+    const fromPair =
+      addr && Number.isFinite(block) ? byAddrBlock.get(`${addr}:${block}`) : null;
+    const fromAddr = addr ? byAddr.get(addr) : null;
+    const addedTimestamp = fromTx?.ts || fromPair || fromAddr?.ts || null;
+    return addedTimestamp ? { ...o, addedTimestamp } : o;
+  });
 }
 
 function mapLive(s) {
@@ -101,7 +148,7 @@ function mapCrispEvent(e) {
 }
 
 export async function loadFromSupabase() {
-  const [ops, stats, events, counts, crisp, exitEvents] = await Promise.all([
+  const [ops, stats, events, counts, crisp, exitEvents, addedEvents] = await Promise.all([
     supabase.from("if_operators").select("*").order("available_tickets", { ascending: false }),
     supabase.from("if_network_stats").select("*").eq("id", 1).maybeSingle(),
     supabase
@@ -126,6 +173,13 @@ export async function loadFromSupabase() {
         "AssetsQueuedForExit",
         "AssetsClaimed",
       ])
+      .order("block_number", { ascending: false })
+      .limit(500),
+    supabase
+      .from("if_events")
+      .select("args,block_number,tx_hash,block_timestamp,event_name")
+      .eq("contract_key", "registry")
+      .eq("event_name", "CiphernodeAdded")
       .order("block_number", { ascending: false })
       .limit(500),
   ]);
@@ -159,6 +213,24 @@ export async function loadFromSupabase() {
         blockNumber: e.block_number,
       }));
 
+  let operators = enrichOperatorsWithExits((ops.data || []).map(mapOperator), exitTimeline);
+  if (!addedEvents.error && addedEvents.data?.length) {
+    operators = enrichOperatorsWithAddedTime(operators, addedEvents.data);
+  } else {
+    // Soft fallback: recent timeline may still carry CiphernodeAdded timestamps
+    operators = enrichOperatorsWithAddedTime(
+      operators,
+      timeline
+        .filter((e) => e.event === "CiphernodeAdded")
+        .map((e) => ({
+          args: e.args,
+          block_number: e.blockNumber,
+          tx_hash: e.txHash,
+          block_timestamp: e.blockTimestamp,
+        }))
+    );
+  }
+
   return {
     source: "supabase",
     meta: {
@@ -167,7 +239,7 @@ export async function loadFromSupabase() {
       network: "ethereum-mainnet",
     },
     live: mapLive(stats.data),
-    operators: enrichOperatorsWithExits((ops.data || []).map(mapOperator), exitTimeline),
+    operators,
     timeline,
     crisp: {
       network: crispEvents[0]?.network || "mainnet",
@@ -188,9 +260,21 @@ export async function loadFromJson() {
       e.blockTimestamp ||
       (e.timeStamp ? new Date(Number(e.timeStamp) * 1000).toISOString() : null),
   }));
+  let operators = enrichOperatorsWithExits(data.operators || [], timeline);
+  operators = enrichOperatorsWithAddedTime(
+    operators,
+    timeline
+      .filter((e) => e.event === "CiphernodeAdded" || e.event === "BondOwnerSet")
+      .map((e) => ({
+        args: e.args,
+        block_number: e.blockNumber,
+        tx_hash: e.txHash,
+        block_timestamp: e.blockTimestamp,
+      }))
+  );
   return {
     ...data,
-    operators: enrichOperatorsWithExits(data.operators || [], timeline),
+    operators,
     timeline,
     crisp: data.crisp || { network: "mainnet", events: [] },
     source: "json",

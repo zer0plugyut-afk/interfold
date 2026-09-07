@@ -9,7 +9,7 @@ import { Gauges } from "./components/Gauges";
 import { InstallPrompt } from "./components/InstallPrompt";
 import { DonateButton, DonateModal } from "./components/DonateModal";
 import { LandingPage } from "./components/LandingPage";
-import { OperatorsTable } from "./components/OperatorsTable";
+import { OperatorSortSelect, OperatorsTable } from "./components/OperatorsTable";
 import {
   OperatorNetworkViz,
   VisualizeNetworkButton,
@@ -68,6 +68,7 @@ export default function App() {
   const [searchPayload, setSearchPayload] = useState(null);
   const [showOpViz, setShowOpViz] = useState(false);
   const [showDonate, setShowDonate] = useState(false);
+  const [opSortId, setOpSortId] = useState("tickets-desc");
 
   useEffect(() => {
     if (view === "landing") {
@@ -269,9 +270,12 @@ export default function App() {
                       <span className="hint">tFOLD balance ÷ ticket price (1,000)</span>.
                     </p>
                   </div>
-                  <VisualizeNetworkButton onClick={() => setShowOpViz(true)} />
+                  <div className="section-head__actions">
+                    <VisualizeNetworkButton onClick={() => setShowOpViz(true)} />
+                    <OperatorSortSelect value={opSortId} onChange={setOpSortId} />
+                  </div>
                 </div>
-                <OperatorsTable operators={operators} priceUsd={priceUsd} />
+                <OperatorsTable operators={operators} priceUsd={priceUsd} sortId={opSortId} />
                 {showOpViz ? (
                   <OperatorNetworkViz
                     operators={operators}

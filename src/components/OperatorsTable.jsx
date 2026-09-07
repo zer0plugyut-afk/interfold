@@ -1,9 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
+import { Sorting01Icon } from "@hugeicons/core-free-icons";
 import { etherscanAddress, num, shortAddr } from "../lib/format";
 import { formatUsd } from "../lib/foldPrice";
-import { formatUnlockCountdown } from "../lib/timeFormat";
+import { formatUnlockCountdown, formatWhenShort } from "../lib/timeFormat";
 import { useEnsNames } from "../hooks/useEnsNames";
+import { Icon } from "./Icon";
 import { Pill } from "./Pill";
+
+/** Clear sort modes — not every column header. */
+const SORT_OPTIONS = [
+  { id: "tickets-desc", label: "Tickets · high → low" },
+  { id: "tickets-asc", label: "Tickets · low → high" },
+  { id: "share-desc", label: "Sortition share · high → low" },
+  { id: "share-asc", label: "Sortition share · low → high" },
+  { id: "bond-desc", label: "Bonded FOLD · high → low" },
+  { id: "bond-asc", label: "Bonded FOLD · low → high" },
+  { id: "added-desc", label: "Time added · newest first" },
+  { id: "added-asc", label: "Time added · oldest first" },
+  { id: "status", label: "Status · exiting / active first" },
+];
 
 function useNow(intervalMs = 30_000) {
   const [now, setNow] = useState(() => Date.now());
@@ -34,7 +49,85 @@ function AddrCell({ address, ens, trailing, sub }) {
   );
 }
 
-export function OperatorsTable({ operators, priceUsd }) {
+function statusRank(o) {
+  if (o.hasExitInProgress) return 3;
+  if (o.isActive) return 2;
+  if (o.isRegistered) return 1;
+  return 0;
+}
+
+function addedMs(o) {
+  if (o.addedTimestamp) {
+    const t = new Date(o.addedTimestamp).getTime();
+    if (Number.isFinite(t)) return t;
+  }
+  const block = Number(o.addedBlock);
+  return Number.isFinite(block) ? block : 0;
+}
+
+function compareOps(a, b, sortId) {
+  let cmp = 0;
+  switch (sortId) {
+    case "tickets-desc":
+      cmp = (Number(b.availableTickets) || 0) - (Number(a.availableTickets) || 0);
+      break;
+    case "tickets-asc":
+      cmp = (Number(a.availableTickets) || 0) - (Number(b.availableTickets) || 0);
+      break;
+    case "share-desc":
+      cmp = (Number(b.ticketSharePct) || 0) - (Number(a.ticketSharePct) || 0);
+      break;
+    case "share-asc":
+      cmp = (Number(a.ticketSharePct) || 0) - (Number(b.ticketSharePct) || 0);
+      break;
+    case "bond-desc":
+      cmp = (Number(b.ciphernodeBond) || 0) - (Number(a.ciphernodeBond) || 0);
+      break;
+    case "bond-asc":
+      cmp = (Number(a.ciphernodeBond) || 0) - (Number(b.ciphernodeBond) || 0);
+      break;
+    case "added-desc":
+      cmp = addedMs(b) - addedMs(a);
+      break;
+    case "added-asc":
+      cmp = addedMs(a) - addedMs(b);
+      break;
+    case "status":
+      cmp = statusRank(b) - statusRank(a);
+      break;
+    default:
+      cmp = (Number(b.availableTickets) || 0) - (Number(a.availableTickets) || 0);
+  }
+  if (cmp === 0) {
+    cmp = String(a.address || "").localeCompare(String(b.address || ""));
+  }
+  return cmp;
+}
+
+export function OperatorSortSelect({ value, onChange, id = "op-sort-select" }) {
+  return (
+    <div className="op-sort-bar">
+      <label className="op-sort-bar__label" htmlFor={id}>
+        <Icon icon={Sorting01Icon} size={14} />
+        Sort by
+      </label>
+      <select
+        id={id}
+        className="op-sort-bar__select mono"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {SORT_OPTIONS.map((opt) => (
+          <option key={opt.id} value={opt.id}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+export function OperatorsTable({ operators, priceUsd, sortId = "tickets-desc" }) {
   const nowMs = useNow();
 
   const ensAddresses = useMemo(() => {
@@ -48,20 +141,18 @@ export function OperatorsTable({ operators, priceUsd }) {
 
   const ens = useEnsNames(ensAddresses);
 
+  const sorted = useMemo(() => {
+    if (!operators?.length) return [];
+    return [...operators].sort((a, b) => compareOps(a, b, sortId));
+  }, [operators, sortId]);
+
   if (!operators?.length) {
     return <div className="empty">No operators yet. Seed JSON or run the indexer.</div>;
   }
 
-  const sorted = [...operators].sort((a, b) => {
-    const ae = a.hasExitInProgress ? 1 : 0;
-    const be = b.hasExitInProgress ? 1 : 0;
-    if (ae !== be) return be - ae;
-    return 0;
-  });
-
   return (
     <div className="table-wrap">
-      <table>
+      <table className="ops-table">
         <thead>
           <tr>
             <th>Operator</th>
@@ -91,7 +182,9 @@ export function OperatorsTable({ operators, priceUsd }) {
             const opSubParts = [];
             if (opEns) opSubParts.push(shortAddr(o.address));
             if (exiting && unlockCd) opSubParts.push(unlockCd);
-            opSubParts.push(`added @ block ${num(o.addedBlock)}`);
+            const addedWhen = formatWhenShort(o.addedTimestamp);
+            if (addedWhen) opSubParts.push(`added ${addedWhen}`);
+            else if (o.addedBlock != null) opSubParts.push(`added @ block ${num(o.addedBlock)}`);
 
             return (
               <tr key={o.address} className={exiting ? "op-row is-exiting" : undefined}>
