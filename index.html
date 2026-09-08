@@ -1,21 +1,57 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
   <head>
+    <!-- Primary Meta Tags -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#07141a" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#f3f7f4" media="(prefers-color-scheme: light)" />
 
-    <title>Interfold Board</title>
+    <title>
+      Interfold Board — Ciphernode Operators, FOLD Tokenomics, Events &amp; DAO | The Interfold
+    </title>
+    <meta
+      name="title"
+      content="Interfold Board — Ciphernode Operators, FOLD Tokenomics, Events & DAO | The Interfold"
+    />
     <meta
       name="description"
-      content="Community analytics for The Interfold — operators, live on-chain events, charts, tokenomics, and CRISP."
+      content="Unofficial community analytics for The Interfold: live ciphernode operators, bonded FOLD, tickets, on-chain events, charts, FOLD tokenomics, CRISP, and DAO proposal tracking."
+    />
+    <meta
+      name="keywords"
+      content="Interfold Board, Interfold dashboard, The Interfold, FOLD token, FOLD tokenomics, ciphernode operators, ciphernode rewards, Interfold DAO, IPP-001, CRISP voting, Encrypted Execution, E3, BondingRegistry, sortition tickets, tFOLD, confidential coordination, Ethereum mainnet analytics"
     />
     <meta name="application-name" content="Interfold Board" />
-    <meta name="author" content="Interfold Board community" />
+    <meta name="author" content="Chris Wilder" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://interfoldboard.app/" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="https://interfoldboard.app/sitemap.xml" />
+    <meta name="google-site-verification" content="4PwIHitJPjTjFQ5J5mszZmpUfA-PZs62RFnpIGaD_UI" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HLJL424538"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-HLJL424538", { send_page_view: false });
+    </script>
+
+    <!-- Normalize root URL to trailing slash (canonical for Google) -->
+    <script>
+      (function () {
+        var u = window.location.href;
+        var path = window.location.pathname;
+        var base = u.split("?")[0].split("#")[0];
+        if ((path === "" || path === "/") && !base.endsWith("/")) {
+          window.location.replace(base + "/" + (window.location.search || "") + (window.location.hash || ""));
+        }
+      })();
+    </script>
 
     <!-- Favicons / PWA -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -28,32 +64,69 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="msapplication-TileColor" content="#07141a" />
 
-    <!-- Open Graph — absolute URLs required for Discord / Slack / X previews -->
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://interfoldboard.app/" />
     <meta property="og:site_name" content="Interfold Board" />
-    <meta property="og:title" content="Interfold Board" />
+    <meta
+      property="og:title"
+      content="Interfold Board — Ciphernode Operators, FOLD Tokenomics, Events & DAO"
+    />
     <meta
       property="og:description"
-      content="Community analytics for The Interfold — operators, live on-chain events, charts, tokenomics, and CRISP."
+      content="Community analytics for The Interfold: operators, bonded FOLD, tickets, on-chain events, charts, tokenomics, CRISP, and DAO drafts."
     />
     <meta property="og:image" content="https://interfoldboard.app/og-image.png" />
     <meta property="og:image:secure_url" content="https://interfoldboard.app/og-image.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Interfold Board — community analytics" />
+    <meta property="og:image:alt" content="Interfold Board — community analytics for The Interfold" />
     <meta property="og:locale" content="en_US" />
 
-    <!-- Twitter / X large card -->
+    <!-- Twitter / X Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Interfold Board" />
+    <meta name="twitter:url" content="https://interfoldboard.app/" />
+    <meta
+      name="twitter:title"
+      content="Interfold Board — Ciphernode Operators, FOLD Tokenomics, Events & DAO"
+    />
     <meta
       name="twitter:description"
-      content="Community analytics for The Interfold — operators, live on-chain events, charts, tokenomics, and CRISP."
+      content="Community analytics for The Interfold: operators, bonded FOLD, tickets, on-chain events, charts, tokenomics, CRISP, and DAO drafts."
     />
     <meta name="twitter:image" content="https://interfoldboard.app/og-image.png" />
-    <meta name="twitter:image:alt" content="Interfold Board — community analytics" />
+    <meta name="twitter:image:alt" content="Interfold Board — community analytics for The Interfold" />
+    <meta name="twitter:creator" content="@realchriswilder" />
+    <meta name="twitter:site" content="@realchriswilder" />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Interfold Board — Ciphernode Operators, FOLD Tokenomics, Events & DAO",
+        "url": "https://interfoldboard.app/",
+        "description": "Unofficial community analytics for The Interfold: live ciphernode operators, bonded FOLD, tickets, on-chain events, charts, FOLD tokenomics, CRISP, and DAO proposal tracking.",
+        "applicationCategory": "Blockchain Analytics",
+        "operatingSystem": "Web",
+        "author": {
+          "@type": "Person",
+          "name": "Chris Wilder",
+          "url": "https://x.com/realchriswilder"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Interfold Board",
+          "url": "https://interfoldboard.app/"
+        }
+      }
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -63,6 +136,30 @@
     />
   </head>
   <body>
+    <!-- SEO fallback for crawlers without JS -->
+    <noscript>
+      <h1>Interfold Board — Ciphernode Operators, FOLD Tokenomics, Events &amp; DAO</h1>
+      <p>
+        Unofficial community analytics for The Interfold. Track ciphernode operators, bonded FOLD,
+        sortition tickets, live on-chain events, charts, FOLD tokenomics, CRISP, and DAO drafts.
+      </p>
+      <h2>Inside the board</h2>
+      <ul>
+        <li>Operator board — bonds, tickets, ENS, exit status, sort by tickets / share / time added</li>
+        <li>Event timeline — Bonding, Registry, Interfold, Slashing, Refunds</li>
+        <li>Charts — fees, rewards, and protocol activity</li>
+        <li>Tokenomics — FOLD supply, allocations, unlock schedule</li>
+        <li>DAO — draft IPPs and resolutions (including IPP-001 ciphernode rewards)</li>
+        <li>DApps — CRISP encrypted ballots on mainnet</li>
+      </ul>
+      <p>
+        Built by
+        <a href="https://x.com/realchriswilder">Chris Wilder</a>
+        for the Interfold community. Not affiliated with the Interfold Foundation.
+      </p>
+      <p><a href="https://interfoldboard.app/">https://interfoldboard.app/</a></p>
+    </noscript>
+
     <div id="root"></div>
     <!-- Capture install event early — it can fire before React mounts (esp. desktop). -->
     <script>

@@ -1,7 +1,7 @@
 {
   "name": "Interfold Board",
   "short_name": "Interfold Board",
-  "description": "Community analytics for The Interfold — operators, on-chain events, charts, tokenomics, and CRISP.",
+  "description": "Community analytics for The Interfold — operators, bonded FOLD, on-chain events, charts, tokenomics, CRISP, and DAO drafts.",
   "start_url": "/",
   "scope": "/",
   "id": "/",
