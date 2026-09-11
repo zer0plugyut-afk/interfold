@@ -252,8 +252,9 @@ function DaoDetail({ proposal: p, priceUsd }) {
 
       {priceUsd != null ? (
         <p className="dao-spot mono">
-          Spot estimate at current FOLD price — pool {poolUsd} · epoch {epochUsd}. Not a figure
-          from the draft; the author cites a ~$250k–$300k treasury buy.
+          Spot estimate at current FOLD price — pool {poolUsd} · avg epoch {epochUsd} (actual
+          epochs 600k→4.8M). Not a figure from the draft; the author cites a ~$250k–$300k treasury
+          buy.
         </p>
       ) : null}
 
@@ -273,14 +274,49 @@ function DaoDetail({ proposal: p, priceUsd }) {
 
       <section className="dao-block">
         <h4>
+          <Icon icon={Calendar03Icon} size={16} /> Fibonacci epoch schedule
+        </h4>
+        <p className="dao-note">
+          Weights 1:1:2:3:5:8 (20 units × 600,000 FOLD). Early epochs reward launch operators;
+          later epochs backload the pool to attract new capacity.
+        </p>
+        <div className="dao-table-wrap">
+          <table className="dao-table">
+            <thead>
+              <tr>
+                <th>Epoch</th>
+                <th>Weight</th>
+                <th>Pool (FOLD)</th>
+                <th>Spot</th>
+              </tr>
+            </thead>
+            <tbody>
+              {EPOCH_SCHEDULE.map((row) => (
+                <tr key={row.epoch}>
+                  <td className="mono">{row.epoch}</td>
+                  <td className="mono">{row.weight}</td>
+                  <td className="mono">{exactFold(row.pool)}</td>
+                  <td className="mono">{formatUsd(row.pool, priceUsd)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="dao-block">
+        <h4>
           <Icon icon={ChartBarLineIcon} size={16} /> Ticket-block accrual
         </h4>
-        <p className="dao-formula mono">{p.accrualFormula || "rewardᵢ = 2,000,000 × ticketBlocksᵢ ÷ Σ ticketBlocks"}</p>
+        <p className="dao-formula mono">
+          {p.accrualFormula || "rewardᵢ = epochPool × ticketBlocksᵢ ÷ Σ ticketBlocks"}
+        </p>
         {p.accrualFormulaHint ? <p className="dao-note">{p.accrualFormulaHint}</p> : null}
         <div className="dao-table-wrap">
           <table className="dao-table">
             <caption className="mono">
-              Same 2M FOLD epoch pool — payout per ticket held the full epoch (~40,320 blocks)
+              Illustrative at the 2M FOLD average epoch pool — actual per-ticket payout scales with
+              that epoch’s Fibonacci pool (600k → 4.8M)
             </caption>
             <thead>
               <tr>
