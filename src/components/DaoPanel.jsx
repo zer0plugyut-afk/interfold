@@ -24,6 +24,7 @@ import {
   DAO_PROPOSALS,
   DAO_RULES,
   EPOCH_POOL,
+  EPOCH_SCHEDULE,
   TICKET_SCENARIOS,
   daoCounts,
 } from "../lib/daoProposals";

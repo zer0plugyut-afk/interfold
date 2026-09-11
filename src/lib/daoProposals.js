@@ -17,14 +17,27 @@ export const DAO_RULES = [
   { id: "path", label: "Lifecycle", value: "Vote → Foundation → Execute" },
 ];
 
-/** Ticket-block split of a 2,000,000 FOLD epoch pool (full-epoch ticket held). */
+/** Average epoch pool (illustrative); actual pools follow Fibonacci schedule. */
 export const EPOCH_POOL = 2_000_000;
 export const PROGRAM_POOL = 12_000_000;
 export const TOTAL_SUPPLY = 1_200_000_000;
 /** 14-day epoch at ~30s blocks. */
 export const EPOCH_BLOCKS = 40_320;
 
-/** Indicative payout if that ticket count is held the full epoch. */
+/** Fibonacci weights 1:1:2:3:5:8 → 20 units × 600,000 FOLD. */
+export const EPOCH_SCHEDULE = [
+  { epoch: 1, weight: 1, pool: 600_000 },
+  { epoch: 2, weight: 1, pool: 600_000 },
+  { epoch: 3, weight: 2, pool: 1_200_000 },
+  { epoch: 4, weight: 3, pool: 1_800_000 },
+  { epoch: 5, weight: 5, pool: 3_000_000 },
+  { epoch: 6, weight: 8, pool: 4_800_000 },
+];
+
+/**
+ * Indicative payout if that ticket count is held the full epoch,
+ * illustrated at the 2M FOLD average epoch pool (actual rate scales with that epoch’s Fibonacci pool).
+ */
 export const TICKET_SCENARIOS = [
   { tickets: 10, perTicket: 200_000 },
   { tickets: 100, perTicket: 20_000 },
@@ -46,17 +59,17 @@ export const DAO_PROPOSALS = [
     sourceLabel: "Fileverse draft",
     sourceUrl: DAO_SOURCE_FILEVERSE,
     revisedNote:
-      "Updated from epoch-end snapshot to block-by-block ticket weighting (ticket-blocks).",
+      "Updated to a backloaded Fibonacci epoch schedule (600k → 4.8M FOLD) with per-block ticket-block accrual.",
     summary:
-      "A time-boxed FOLD reward for ciphernode operators. 12,000,000 FOLD (1.0% of the 1.2B supply) from the Foundation treasury, paid in 6 biweekly batches, in proportion to each operator’s ticket-block accrual (tickets × blocks held across the epoch). Paid as VE-locked FOLD via createLockFor(), so rewards immediately count as voting power and carry a 30-day unlock. Tracking is manual — no new contracts, no new emissions.",
+      "A time-boxed FOLD reward for ciphernode operators. 12,000,000 FOLD (1.0% of the 1.2B supply) from the Foundation treasury, paid in six biweekly batches on a backloaded Fibonacci schedule (pools 600,000 → 4,800,000 FOLD across the six epochs), in proportion to each operator’s ticket-block accrual (tickets × blocks held across the epoch). Paid as VE-locked FOLD via createLockFor(), so rewards immediately count as voting power and carry a 30-day unlock. Tracking is manual — no new contracts, no new emissions.",
     motivation:
       "The network — including its own CRISP governance rounds — needs ciphernodes online. E3 requests are currently paused or minimal, so the existing fee-share rewards (BondingRegistry.distributeRewards) pay almost nothing. This program closes that availability gap bounded in time and budget.",
     conclusion:
       "The network needs ciphernodes online now, and usage revenue can’t pay for that yet. This proposal spends 1% of supply over 12 weeks, run on existing tooling and on-chain reads, with audit via IPFS-pinned settlement sheets. Parameters are fixed at execution; changes go through the normal governance path.",
     metrics: [
       { id: "pool", label: "Reward pool", value: "12,000,000", unit: "FOLD", hint: "1.0% of 1.2B supply" },
-      { id: "epochs", label: "Epochs", value: "6", unit: "× 14 days", hint: "~40,320 blocks each" },
-      { id: "batch", label: "Per epoch", value: "2,000,000", unit: "FOLD", hint: "Ticket-block weighted" },
+      { id: "epochs", label: "Epochs", value: "6", unit: "× 14 days", hint: "Fibonacci 1:1:2:3:5:8" },
+      { id: "batch", label: "Epoch pools", value: "600k→4.8M", unit: "FOLD", hint: "Backloaded schedule" },
       { id: "lock", label: "VE lock", value: "30", unit: "days", hint: "createLockFor() on receipt" },
     ],
     design: [
@@ -65,12 +78,16 @@ export const DAO_PROPOSALS = [
         body: "12 weeks from T0 — the protocol’s mainnet launch (Interfold mainnet deployment block, verifiable on-chain; not the FOLD mint/TGE block) — in 6 epochs of 14 days. Retroactive by design: operators who stood up ciphernodes at launch with no subsidy promised are rewarded. Epochs already elapsed at execution settle in sequence as distinct published events; remaining epochs then run on the biweekly cadence.",
       },
       {
+        title: "Epoch schedule (Fibonacci backload)",
+        body: "The 12,000,000 FOLD pool is split by Fibonacci weights 1:1:2:3:5:8 (20 units; 1 unit = 600,000 FOLD) → 600k / 600k / 1.2M / 1.8M / 3M / 4.8M. Early epochs reward operators who stood up ciphernodes before any subsidy was promised; later epochs backload the pool to pull in new capacity as the program becomes known.",
+      },
+      {
         title: "Eligibility (“active”)",
         body: "An operator is active at a given block if it is registered in the CiphernodeRegistry; bonded at or above the active-maintenance floor (isCiphernodeBonded); holds the minimum sortition tickets; and is not banned by the SlashingManager. Predicate failures at a given block contribute 0 for that block’s accrual.",
       },
       {
         title: "Accrual (ticket-blocks, per-block)",
-        body: "The epoch’s 2,000,000 FOLD is split in proportion to each operator’s ticket-block total: the sum, over every block of the epoch, of the operator’s ticket balance, with any inactive block contributing 0. A ticket held the whole epoch earns that epoch’s full block count (~40,320 at 30s blocks); one staked only at the final block earns 1 — so a last-block snipe is exactly priced. Settlement remains a recomputable script over archive-node state.",
+        body: "That epoch’s Fibonacci-weighted pool is split in proportion to each operator’s ticket-block total: the sum, over every block of the epoch, of the operator’s ticket balance, with any inactive block contributing 0. A ticket held the whole epoch earns that epoch’s full block count (~40,320 at 30s blocks); one staked only at the final block earns 1 — so a last-block snipe is exactly priced. Settlement remains a recomputable script over archive-node state.",
       },
       {
         title: "Transparency",
@@ -78,7 +95,7 @@ export const DAO_PROPOSALS = [
       },
       {
         title: "Settlement",
-        body: "6 batches of 2,000,000 FOLD, each after that sheet’s 48h dispute window. Payouts are VE-locked FOLD: treasury createLockFor() for each recipient (30-day lock). Locked FOLD counts as voting power on distribution; no recipient can sell until unlock. No claim flow and no new contract.",
+        body: "Six batches — that epoch’s Fibonacci-weighted pool — each after that sheet’s 48h dispute window. Payouts are VE-locked FOLD: treasury createLockFor() for each recipient (30-day lock). Locked FOLD counts as voting power on distribution; no recipient can sell until unlock. No claim flow and no new contract.",
       },
       {
         title: "Why biweekly batches",
@@ -94,9 +111,9 @@ export const DAO_PROPOSALS = [
       ticketStake: "1,000 sUSDS per ticket",
       bondNote: "Each ticket sits on top of the 32,000 FOLD bond (both slashable).",
     },
-    accrualFormula: "rewardᵢ = 2,000,000 × ticketBlocksᵢ ÷ Σ ticketBlocks",
+    accrualFormula: "rewardᵢ = epochPool × ticketBlocksᵢ ÷ Σ ticketBlocks",
     accrualFormulaHint:
-      "ticketBlocksᵢ = Σ over epoch blocks of ticketsᵢ(b) while active (else 0). Full-epoch ticket ≈ 40,320 ticket-blocks.",
+      "epochPool follows Fibonacci (600k→4.8M). ticketBlocksᵢ = Σ over epoch blocks of ticketsᵢ(b) while active (else 0). Full-epoch ticket ≈ 40,320 ticket-blocks.",
     parameters: [
       {
         label: "Window",
@@ -109,7 +126,7 @@ export const DAO_PROPOSALS = [
       {
         label: "Per epoch",
         value:
-          "2,000,000 FOLD, split in proportion to ticket-blocks accrued per operator over the epoch (tickets × blocks, per-block)",
+          "Fibonacci-weighted pool (1:1:2:3:5:8 → 600k / 600k / 1.2M / 1.8M / 3M / 4.8M FOLD), split in proportion to ticket-blocks accrued per operator (tickets × blocks)",
       },
       {
         label: "“Active”",
@@ -133,7 +150,7 @@ export const DAO_PROPOSALS = [
       {
         risk: "12M FOLD sold in one window",
         mitigation:
-          "30-day VE lock (rewards can’t be sold on distribution date) plus 6 × 2M batches, each with a public settlement sheet ahead of its payout.",
+          "30-day VE lock (rewards can’t be sold on distribution date) plus six scheduled batches (600k → 4.8M FOLD), each with a public settlement sheet ahead of its payout.",
       },
       {
         risk: "Reward economy farmed by ticket sybils",
