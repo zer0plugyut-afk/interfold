@@ -127,10 +127,34 @@ function ArgValue({ value, sepolia, argKey }) {
   );
 }
 
+/** Prefer ERC transfer direction: from → to, then tokenId. */
+const ARG_KEY_RANK = {
+  from: 0,
+  sender: 1,
+  to: 2,
+  recipient: 3,
+  owner: 4,
+  operator: 5,
+  tokenId: 6,
+  amount: 7,
+  value: 8,
+};
+
+function rankedEntries(obj) {
+  return Object.entries(obj).sort(([a], [b]) => {
+    const ra = ARG_KEY_RANK[a];
+    const rb = ARG_KEY_RANK[b];
+    if (ra != null || rb != null) {
+      return (ra ?? 50) - (rb ?? 50) || a.localeCompare(b);
+    }
+    return a.localeCompare(b);
+  });
+}
+
 function flattenArgs(args, prefix = "") {
   if (!isPlainObject(args)) return [];
   const rows = [];
-  for (const [k, v] of Object.entries(args)) {
+  for (const [k, v] of rankedEntries(args)) {
     const key = prefix ? `${prefix}.${k}` : k;
     if (isPlainObject(v) && !Array.isArray(v)) {
       rows.push(...flattenArgs(v, key));

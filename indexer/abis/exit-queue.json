@@ -1,0 +1,85 @@
+[
+  {
+    "type": "event",
+    "name": "ExitQueued",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "holder", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "exitDate", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ExitCancelled",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "holder", "type": "address" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "Exit",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "fee", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "CooldownSet",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "internalType": "uint48", "name": "cooldown", "type": "uint48" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "FeePercentSet",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "internalType": "uint256", "name": "feePercent", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "MinLockSet",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "internalType": "uint48", "name": "minLock", "type": "uint48" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "queue",
+    "stateMutability": "view",
+    "inputs": [{ "internalType": "uint256", "name": "_tokenId", "type": "uint256" }],
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "address", "name": "holder", "type": "address" },
+          { "internalType": "uint256", "name": "exitDate", "type": "uint256" }
+        ],
+        "internalType": "struct ITicket.Ticket",
+        "name": "",
+        "type": "tuple"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "cooldown",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "internalType": "uint48", "name": "", "type": "uint48" }]
+  },
+  {
+    "type": "function",
+    "name": "canExit",
+    "stateMutability": "view",
+    "inputs": [{ "internalType": "uint256", "name": "_tokenId", "type": "uint256" }],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }]
+  }
+]

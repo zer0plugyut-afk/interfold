@@ -11,6 +11,7 @@ export function Sidebar({ panel, onNavigate, onGoHome, counts, theme, onToggleTh
     { id: "events", label: "Events", count: counts.events },
     { id: "charts", label: "Charts", count: null },
     { id: "tokenomics", label: "Tokenomics", count: null },
+    { id: "governance", label: "Governance", count: counts.governance },
     { id: "dao", label: "DAO", count: counts.dao },
     { id: "apps", label: "DApps", count: DAPPS.length },
   ];

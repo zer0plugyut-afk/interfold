@@ -66,7 +66,7 @@ export function LandingPage({
         </p>
         <p className="landing-page__support">
           A community analytics layer for The Interfold — live operators, protocol events,
-          FOLD tokenomics, DAO drafts, and apps like CRISP.
+          FOLD tokenomics, governance locks, DAO drafts, and apps like CRISP.
         </p>
         <div className="landing-page__cta-row">
           <button
@@ -161,6 +161,11 @@ export function LandingPage({
               id: "tokenomics",
               title: "Tokenomics",
               body: "FOLD supply, allocations, and the unlock schedule in one place.",
+            },
+            {
+              id: "governance",
+              title: "Governance",
+              body: "Locked + bonded FOLD voting power, exits, and who holds votes.",
             },
             {
               id: "dao",

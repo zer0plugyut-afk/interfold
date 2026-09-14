@@ -18,6 +18,7 @@ export const NAV_ICONS = {
   events: Activity01Icon,
   charts: ChartBarLineIcon,
   tokenomics: PieChart02Icon,
+  governance: VoteIcon,
   dao: JusticeScale01Icon,
   apps: BrowserIcon,
 };
@@ -29,6 +30,11 @@ export const CONTRACT_ICONS = {
   Interfold: Hexagon01Icon,
   SlashingManager: ShieldEnergyIcon,
   E3RefundManager: Undo03Icon,
+  VotingEscrow: Coins01Icon,
+  EscrowIVotesAdapter: VoteIcon,
+  ExitQueue: Undo03Icon,
+  veFOLD: HierarchySquare01Icon,
+  FOLDLocks: Coins01Icon,
   CRISPProgram: VoteIcon,
   SelfRegistry: HierarchySquare01Icon,
   "CRISP-Interfold": Hexagon01Icon,
@@ -41,6 +47,11 @@ export const CONTRACT_FILTER_META = [
   { id: "Interfold", label: "Interfold (E3)", icon: Hexagon01Icon },
   { id: "SlashingManager", label: "Slashing", icon: ShieldEnergyIcon },
   { id: "E3RefundManager", label: "Refunds", icon: Undo03Icon },
+  { id: "VotingEscrow", label: "Locks", icon: Coins01Icon },
+  { id: "EscrowIVotesAdapter", label: "Delegates", icon: VoteIcon },
+  { id: "ExitQueue", label: "Exit queue", icon: Undo03Icon },
+  { id: "veFOLD", label: "veFOLD NFT", icon: HierarchySquare01Icon },
+  { id: "FOLDLocks", label: "Vesting locks", icon: Coins01Icon },
 ];
 
 export const CRISP_FILTER_META = [

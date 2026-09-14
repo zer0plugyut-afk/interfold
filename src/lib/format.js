@@ -22,6 +22,11 @@ export const CONTRACT_FILTERS = [
   "Interfold",
   "SlashingManager",
   "E3RefundManager",
+  "VotingEscrow",
+  "EscrowIVotesAdapter",
+  "ExitQueue",
+  "veFOLD",
+  "FOLDLocks",
 ];
 
 export const DEFAULT_SCOPE = {

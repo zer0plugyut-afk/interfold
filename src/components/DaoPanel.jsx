@@ -50,9 +50,9 @@ function statusClass(status) {
 }
 
 /**
- * @param {{ priceUsd?: number | null }} props
+ * @param {{ priceUsd?: number | null, onOpenGovernance?: () => void }} props
  */
-export function DaoPanel({ priceUsd }) {
+export function DaoPanel({ priceUsd, onOpenGovernance }) {
   const [filter, setFilter] = useState("all");
   const [selectedId, setSelectedId] = useState(DAO_PROPOSALS[0]?.id ?? null);
   const counts = useMemo(() => daoCounts(), []);
@@ -72,6 +72,16 @@ export function DaoPanel({ priceUsd }) {
           Community preview of Interfold Protocol Proposals. Drafts are transcribed from
           published sources; when a proposal is finalized on-chain we update the same card.
           Not an official voting interface.
+          {onOpenGovernance ? (
+            <>
+              {" "}
+              Locked FOLD &amp; delegates live under{" "}
+              <button type="button" className="gov-inline-link" onClick={onOpenGovernance}>
+                Governance
+              </button>
+              .
+            </>
+          ) : null}
         </p>
       </div>
 

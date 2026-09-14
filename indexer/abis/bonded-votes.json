@@ -1,0 +1,47 @@
+[
+  {
+    "type": "function",
+    "name": "getVotes",
+    "stateMutability": "view",
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "getPastVotes",
+    "stateMutability": "view",
+    "inputs": [
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "uint256", "name": "timepoint", "type": "uint256" }
+    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "checkpoints",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "votesSource",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "token",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "bonded",
+    "stateMutability": "view",
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }]
+  }
+]

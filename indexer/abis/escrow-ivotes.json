@@ -1,0 +1,86 @@
+[
+  {
+    "type": "event",
+    "name": "TokensDelegated",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "sender", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "delegatee", "type": "address" },
+      { "indexed": false, "internalType": "uint256[]", "name": "tokenIds", "type": "uint256[]" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "TokensUndelegated",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "sender", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "delegatee", "type": "address" },
+      { "indexed": false, "internalType": "uint256[]", "name": "tokenIds", "type": "uint256[]" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "DelegateChanged",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "delegator", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "fromDelegate", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "toDelegate", "type": "address" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "DelegateVotesChanged",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "delegate", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "previousBalance", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "newBalance", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "AutoDelegationDisabledSet",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "delegate", "type": "address" },
+      { "indexed": false, "internalType": "bool", "name": "enabled", "type": "bool" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getVotes",
+    "stateMutability": "view",
+    "inputs": [{ "internalType": "address", "name": "_account", "type": "address" }],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "delegates",
+    "stateMutability": "view",
+    "inputs": [{ "internalType": "address", "name": "_account", "type": "address" }],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "tokenIsDelegated",
+    "stateMutability": "view",
+    "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "numberOfDelegatedTokens",
+    "stateMutability": "view",
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "escrow",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }]
+  }
+]

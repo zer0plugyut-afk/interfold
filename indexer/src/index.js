@@ -6,6 +6,7 @@ import { Contract, Interface, JsonRpcProvider, formatUnits, getAddress } from "e
 import dotenv from "dotenv";
 import { CONTRACTS, TOKENS } from "./contracts.js";
 import { syncCrisp } from "./crisp.js";
+import { refreshGovernance } from "./governance.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // File .env fills gaps only — Railway / shell env always wins (override: false)
@@ -13,9 +14,33 @@ dotenv.config({ path: path.join(__dirname, "../.env"), override: true });
 // override:true so indexer/.env wins over stale shell POLL_INTERVAL_MS (was often 30s)
 
 const ONCE = process.argv.includes("--once");
+const GOV_ONLY =
+  process.argv.includes("--governance-only") ||
+  String(process.env.GOVERNANCE_ONLY || "").toLowerCase() === "true";
 // Default: every 5 minutes — tip-only range from last_synced_block (RPC-efficient)
 const POLL_MS = Number(process.env.POLL_INTERVAL_MS || 5 * 60 * 1000);
-const CHUNK = Number(process.env.LOG_CHUNK_SIZE || 10_000);
+/** Free Alchemy / public RPCs choke on huge eth_getLogs ranges — keep modest. */
+const CHUNK = Number(process.env.LOG_CHUNK_SIZE || 2_000);
+const CHUNK_PAUSE_MS = Number(process.env.LOG_CHUNK_PAUSE_MS || 120);
+
+/** Optional: comma list e.g. escrow,escrowIvotes,exitQueue,veFoldNft — tip-sync only those. */
+function selectedContracts() {
+  const raw = process.env.CONTRACT_KEYS || (GOV_ONLY ? "escrow,escrowIvotes,exitQueue,veFoldNft,foldLocks" : "");
+  const all = Object.values(CONTRACTS);
+  if (!raw.trim()) return all;
+  const want = new Set(
+    raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+  const picked = all.filter((c) => want.has(c.key));
+  if (!picked.length) {
+    console.warn(`[indexer] CONTRACT_KEYS matched nothing (${raw}) — using all`);
+    return all;
+  }
+  return picked;
+}
 
 function requireEnv(name) {
   const v = process.env[name];
@@ -66,25 +91,48 @@ function serializeArg(v) {
   return v;
 }
 
-async function getLogs(provider, address, fromBlock, toBlock) {
+async function getLogs(provider, address, fromBlock, toBlock, chunkSize = CHUNK) {
   const out = [];
-  for (let start = fromBlock; start <= toBlock; start += CHUNK) {
-    const end = Math.min(start + CHUNK - 1, toBlock);
+  let size = Math.max(100, Number(chunkSize) || CHUNK);
+  let start = fromBlock;
+  while (start <= toBlock) {
+    const end = Math.min(start + size - 1, toBlock);
     let attempt = 0;
     for (;;) {
       try {
         const logs = await provider.getLogs({ address, fromBlock: start, toBlock: end });
         out.push(...logs);
-        process.stdout.write(`  ${address.slice(0, 10)}… ${start}-${end}: ${logs.length}\n`);
+        process.stdout.write(
+          `  ${address.slice(0, 10)}… ${start}-${end} (chunk ${size}): ${logs.length}\n`
+        );
+        start = end + 1;
+        if (CHUNK_PAUSE_MS > 0) await sleep(CHUNK_PAUSE_MS);
         break;
       } catch (e) {
         const msg = e.shortMessage || e.message || String(e);
-        if (/403|forbidden|rate|limit|exceed/i.test(msg)) {
-          const err = new Error(
-            `RPC getLogs blocked (${msg}). Set RPC_URL to an Alchemy HTTPS endpoint (pay-as-you-go works).`
+        const rangeTooBig =
+          /block range|query returned more than|response size|timeout|too large|10 block|eth_getLogs/i.test(
+            msg
           );
-          err.code = "RPC_LOGS_FORBIDDEN";
-          throw err;
+        if (rangeTooBig && size > 100) {
+          size = Math.max(100, Math.floor(size / 2));
+          console.warn(`  shrink getLogs chunk → ${size} (${msg.slice(0, 120)})`);
+          attempt = 0;
+          continue;
+        }
+        if (/403|forbidden|rate|limit|exceed/i.test(msg) && !rangeTooBig) {
+          attempt += 1;
+          if (attempt >= 6) {
+            const err = new Error(
+              `RPC getLogs blocked (${msg}). Set RPC_URL to an Alchemy HTTPS endpoint (pay-as-you-go works).`
+            );
+            err.code = "RPC_LOGS_FORBIDDEN";
+            throw err;
+          }
+          const wait = Math.min(15_000, 750 * 2 ** attempt);
+          console.warn(`  rate-limit retry ${attempt} ${start}-${end}: wait ${wait}ms`);
+          await sleep(wait);
+          continue;
         }
         attempt += 1;
         if (attempt >= 5) throw e;
@@ -97,51 +145,65 @@ async function getLogs(provider, address, fromBlock, toBlock) {
   return out;
 }
 
-async function fetchContractLogs(provider, address, fromBlock, toBlock) {
-  const apiKey = process.env.ETHERSCAN_API_KEY || process.env.VITE_ETHERSCAN_API_KEY;
-  if (apiKey) {
-    const viaScan = await etherscanLogs(address, fromBlock, toBlock, apiKey);
-    if (viaScan) {
-      console.log(`  etherscan logs: ${viaScan.length}`);
-      return viaScan;
-    }
-  }
+async function fetchContractLogs(provider, address, fromBlock, toBlock, chunkSize = CHUNK) {
+  // Prefer RPC with small chunks so we never miss pages (Etherscan caps offset).
   try {
-    return await getLogs(provider, address, fromBlock, toBlock);
+    return await getLogs(provider, address, fromBlock, toBlock, chunkSize);
   } catch (e) {
+    const apiKey = process.env.ETHERSCAN_API_KEY || process.env.VITE_ETHERSCAN_API_KEY;
     if (e.code === "RPC_LOGS_FORBIDDEN" && apiKey) {
-      console.warn("  RPC blocked — retrying full range via Etherscan…");
-      const viaScan = await etherscanLogs(address, fromBlock, toBlock, apiKey);
+      console.warn("  RPC blocked — retrying via Etherscan (paged)…");
+      const viaScan = await etherscanLogsPaged(address, fromBlock, toBlock, apiKey);
       if (viaScan) return viaScan;
     }
     throw e;
   }
 }
 
-async function etherscanLogs(address, fromBlock, toBlock, apiKey) {
+async function etherscanLogsPaged(address, fromBlock, toBlock, apiKey) {
   if (!apiKey) return null;
-  const url =
-    `https://api.etherscan.io/v2/api?chainid=1&module=logs&action=getLogs` +
-    `&address=${address}&fromBlock=${fromBlock}&toBlock=${toBlock}&page=1&offset=1000&apikey=${apiKey}`;
-  const res = await fetch(url);
-  const json = await res.json();
-  if (json.status === "0" && /No records/i.test(String(json.message) + String(json.result))) return [];
-  if (json.status !== "1" || !Array.isArray(json.result)) {
-    console.warn("etherscan fallback failed", json.message || json.result);
-    return null;
+  const out = [];
+  // Page in ≤5k-block windows so offset=1000 never truncates a busy range silently.
+  const window = 5_000;
+  for (let start = fromBlock; start <= toBlock; start += window) {
+    const end = Math.min(start + window - 1, toBlock);
+    let page = 1;
+    for (;;) {
+      const url =
+        `https://api.etherscan.io/v2/api?chainid=1&module=logs&action=getLogs` +
+        `&address=${address}&fromBlock=${start}&toBlock=${end}` +
+        `&page=${page}&offset=1000&apikey=${apiKey}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.status === "0" && /No records/i.test(String(json.message) + String(json.result))) break;
+      if (json.status !== "1" || !Array.isArray(json.result)) {
+        console.warn("etherscan fallback failed", json.message || json.result);
+        return out.length ? out : null;
+      }
+      for (const l of json.result) {
+        out.push({
+          address: l.address,
+          topics: l.topics,
+          data: l.data,
+          blockNumber: parseInt(l.blockNumber, 16),
+          transactionHash: l.transactionHash,
+          index: parseInt(l.logIndex, 16),
+        });
+      }
+      if (json.result.length < 1000) break;
+      page += 1;
+      if (page > 20) {
+        console.warn(`etherscan page cap hit ${address} ${start}-${end}`);
+        break;
+      }
+      await sleep(250);
+    }
   }
-  return json.result.map((l) => ({
-    address: l.address,
-    topics: l.topics,
-    data: l.data,
-    blockNumber: parseInt(l.blockNumber, 16),
-    transactionHash: l.transactionHash,
-    index: parseInt(l.logIndex, 16),
-  }));
+  return out;
 }
 
 async function ensureSyncRows(sb, latest) {
-  for (const c of Object.values(CONTRACTS)) {
+  for (const c of selectedContracts()) {
     const { data } = await sb
       .from("if_sync_state")
       .select("contract_key,last_synced_block")
@@ -394,7 +456,8 @@ async function syncContract(sb, provider, cfg, latest) {
 
   console.log(`\n[${cfg.label}] sync ${fromBlock} → ${latest}`);
 
-  const logs = await fetchContractLogs(provider, cfg.address, fromBlock, latest);
+  const chunkSize = cfg.logChunk || CHUNK;
+  const logs = await fetchContractLogs(provider, cfg.address, fromBlock, latest, chunkSize);
   const rows = [];
   for (const log of logs) {
     try {
@@ -444,23 +507,34 @@ async function syncContract(sb, provider, cfg, latest) {
 async function syncOnce(sb, provider) {
   const latest = await provider.getBlockNumber();
   console.log("tip", latest);
+  const contracts = selectedContracts();
+  console.log("contracts", contracts.map((c) => c.key).join(", "));
   await ensureSyncRows(sb, latest);
 
   let total = 0;
-  for (const cfg of Object.values(CONTRACTS)) {
+  for (const cfg of contracts) {
     total += await syncContract(sb, provider, cfg, latest);
   }
 
-  await refreshEventCounts(sb);
-  await refreshNetworkStats(sb, provider);
-  await refreshOperators(sb, provider);
+  if (!GOV_ONLY) {
+    await refreshEventCounts(sb);
+    await refreshNetworkStats(sb, provider);
+    await refreshOperators(sb, provider);
+  }
 
-  // CRISP is a separate module (crisp.js) — mainnet CRISPProgram from PR 1870
-  let crispTotal = 0;
   try {
-    crispTotal = await syncCrisp(sb);
+    await refreshGovernance(sb, provider, loadAbi);
   } catch (e) {
-    console.error("[CRISP] sync error", e.shortMessage || e.message || e);
+    console.error("[governance] refresh error", e.shortMessage || e.message || e);
+  }
+
+  let crispTotal = 0;
+  if (!GOV_ONLY) {
+    try {
+      crispTotal = await syncCrisp(sb);
+    } catch (e) {
+      console.error("[CRISP] sync error", e.shortMessage || e.message || e);
+    }
   }
 
   console.log(`sync complete (+${total} mainnet, +${crispTotal} crisp events)`);
@@ -478,8 +552,12 @@ async function main() {
   console.log("supabase", url);
   console.log("rpc", rpc.replace(/\/v2\/[^/]+/, "/v2/***"));
   console.log("mode", ONCE ? "once" : `loop every ${POLL_MS / 1000}s`);
+  if (GOV_ONLY) console.log("scope: governance-only (escrow + ivotes + exitQueue + veFOLD + foldLocks; no CRISP/operators resync)");
   console.log("strategy: tip-only from if_sync_state.last_synced_block (no full rescan)");
-  console.log("coverage: ALL ABI events on bonding/registry/interfold/slash/refund — including E3* when unpaused");
+  console.log(
+    "coverage: bonding/registry/interfold/slash/refund + escrow/ivotes/exitQueue/veFOLD + FOLD vesting locks; VP via BondedVotes"
+  );
+  console.log(`getLogs chunk default=${CHUNK} pauseMs=${CHUNK_PAUSE_MS}`);
 
   await syncOnce(sb, provider);
   if (ONCE) return;

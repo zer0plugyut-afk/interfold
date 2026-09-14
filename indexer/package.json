@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "backfill": "node src/index.js --once",
+    "backfill:governance": "node src/index.js --once --governance-only",
     "seed-json": "node src/seed-from-json.js",
     "backfill-timestamps": "node src/backfill-timestamps.js",
     "set-cursors": "node src/set-cursors-from-db.js",

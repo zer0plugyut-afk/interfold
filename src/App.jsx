@@ -16,6 +16,7 @@ import {
 } from "./components/OperatorNetworkViz";
 import { TokenomicsPanel } from "./components/TokenomicsPanel";
 import { DaoPanel } from "./components/DaoPanel";
+import { GovernancePanel } from "./components/GovernancePanel";
 import { DAO_PROPOSALS } from "./lib/daoProposals";
 import { Sidebar } from "./components/Sidebar";
 import { SidebarFoldPriceWidget } from "./components/SidebarFoldPriceWidget";
@@ -35,6 +36,7 @@ const TITLES = {
   events: ["Events", "Decoded protocol logs"],
   charts: ["Charts", "Fees, rewards & activity"],
   tokenomics: ["Tokenomics", "FOLD supply & unlock schedule"],
+  governance: ["Governance", "Locked + bonded voting power"],
   dao: ["DAO", "Drafts, votes & resolutions"],
   apps: ["DApps", "Applications on InterFold"],
   search: ["Search", "Address activity"],
@@ -93,6 +95,7 @@ export default function App() {
     () => ({
       operators: operators.length,
       events: data?.timeline?.length ?? 0,
+      governance: data?.governance?.locks?.filter((l) => l.isActive && Number(l.amount) > 0).length ?? 0,
       dao: DAO_PROPOSALS.length,
     }),
     [operators, data]
@@ -255,6 +258,7 @@ export default function App() {
               panel === "apps" ||
               panel === "search" ||
               panel === "tokenomics" ||
+              panel === "governance" ||
               panel === "dao"
                 ? "main-panel--fill"
                 : ""
@@ -289,7 +293,10 @@ export default function App() {
               <section className="panel is-active panel--fill">
                 <div className="section-head">
                   <h2>Event timeline</h2>
-                  <p>Live on-chain logs (Bonding, Registry, Interfold, Slashing, Refunds).</p>
+                  <p>
+                    Live on-chain logs — protocol (Bonding, Registry, Interfold, Slashing, Refunds)
+                    plus governance (Locks, Delegates, Exit queue, veFOLD NFT).
+                  </p>
                 </div>
                 <EventTimeline
                   timeline={data?.timeline || []}
@@ -319,9 +326,20 @@ export default function App() {
               </section>
             )}
 
+            {panel === "governance" && (
+              <section className="panel is-active panel--fill">
+                <GovernancePanel
+                  governance={data?.governance}
+                  operators={operators}
+                  priceUsd={priceUsd}
+                  onOpenDao={() => navigate("dao")}
+                />
+              </section>
+            )}
+
             {panel === "dao" && (
               <section className="panel is-active panel--fill">
-                <DaoPanel priceUsd={priceUsd} />
+                <DaoPanel priceUsd={priceUsd} onOpenGovernance={() => navigate("governance")} />
               </section>
             )}
 

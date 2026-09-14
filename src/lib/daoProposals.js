@@ -7,7 +7,7 @@ export const DAO_SOURCE_FILEVERSE =
   "https://docs.fileverse.io/document/324KnxwAfRGJQ9hzsGDeuV#k=yySI3Bg6m0KBUAHKJ07m_obE1bVWuYBwyKpX-VSXRIA";
 
 export const DAO_GOV_DOCS = "https://docs.theinterfold.com/governance";
-export const DAO_GOV_APP = "https://gov.theinterfold.com";
+export const DAO_GOV_APP = "https://governance.theinterfold.com/";
 
 export const DAO_RULES = [
   { id: "propose", label: "Create proposal", value: "12K FOLD" },

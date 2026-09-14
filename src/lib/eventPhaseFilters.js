@@ -297,6 +297,71 @@ export const EVENT_PHASE_GROUPS = {
       ]),
     },
   ],
+
+  VotingEscrow: [
+    {
+      id: "locks",
+      label: "Locks",
+      match: nameIn(["Deposit", "Withdraw", "Merged", "Split"]),
+    },
+    {
+      id: "admin",
+      label: "Admin",
+      match: nameIn(["MinDepositSet", "Sweep", "SweepNFT"]),
+    },
+  ],
+
+  EscrowIVotesAdapter: [
+    {
+      id: "delegation",
+      label: "Delegation",
+      match: nameIn([
+        "TokensDelegated",
+        "TokensUndelegated",
+        "DelegateChanged",
+        "DelegateVotesChanged",
+      ]),
+    },
+    {
+      id: "config",
+      label: "Config",
+      match: nameIn(["AutoDelegationDisabledSet"]),
+    },
+  ],
+
+  ExitQueue: [
+    {
+      id: "exits",
+      label: "Exits",
+      match: nameIn(["ExitQueued", "ExitCancelled", "Exit"]),
+    },
+    {
+      id: "config",
+      label: "Config",
+      match: nameIn(["CooldownSet", "FeePercentSet", "MinLockSet"]),
+    },
+  ],
+
+  veFOLD: [
+    {
+      id: "transfers",
+      label: "Transfers",
+      match: nameIn(["Transfer"]),
+    },
+  ],
+
+  FOLDLocks: [
+    {
+      id: "active",
+      label: "Active locks",
+      match: nameIn(["ActiveLockUpdated", "ActiveLockRelinked"]),
+    },
+    {
+      id: "queued",
+      label: "Queued",
+      match: nameIn(["QueuedLockUpdated"]),
+    },
+  ],
 };
 
 export function phasesForContract(contractId) {

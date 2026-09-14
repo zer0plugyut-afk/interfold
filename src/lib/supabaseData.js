@@ -18,6 +18,11 @@ const LABEL = {
   interfold: "Interfold",
   slash: "SlashingManager",
   refund: "E3RefundManager",
+  escrow: "VotingEscrow",
+  escrowIvotes: "EscrowIVotesAdapter",
+  exitQueue: "ExitQueue",
+  veFoldNft: "veFOLD",
+  foldLocks: "FOLDLocks",
 };
 
 const CRISP_LABEL = {
@@ -147,8 +152,71 @@ function mapCrispEvent(e) {
   };
 }
 
+function mapLock(l) {
+  return {
+    tokenId: Number(l.token_id),
+    owner: l.owner,
+    amount: Number(l.amount) || 0,
+    startTs: l.start_ts != null ? Number(l.start_ts) : null,
+    isActive: Boolean(l.is_active),
+    isExiting: Boolean(l.is_exiting),
+    isDelegated: Boolean(l.is_delegated),
+    delegatee: l.delegatee || null,
+    exitHolder: l.exit_holder || null,
+    exitDate: l.exit_date || null,
+    exitTx: l.exit_tx || null,
+    nftOwner: l.nft_owner || null,
+    createdBlock: l.created_block != null ? Number(l.created_block) : null,
+    createdTx: l.created_tx || null,
+    createdAt: l.created_at || null,
+    withdrawnBlock: l.withdrawn_block != null ? Number(l.withdrawn_block) : null,
+    withdrawnTx: l.withdrawn_tx || null,
+    updatedAt: l.updated_at || null,
+  };
+}
+
+function mapDelegation(d) {
+  return {
+    account: d.account,
+    delegatee: d.delegatee || null,
+    votes: Number(d.votes) || 0,
+    lockedVotes: Number(d.locked_votes) || 0,
+    bondedVotes: Number(d.bonded_votes) || 0,
+    vestingVotes: Number(d.vesting_votes) || 0,
+    updatedBlock: d.updated_block != null ? Number(d.updated_block) : null,
+    updatedTx: d.updated_tx || null,
+    updatedAt: d.updated_at || null,
+  };
+}
+
+function mapGovernanceStats(s) {
+  if (!s) return null;
+  return {
+    totalLocked: s.total_locked,
+    currentExiting: s.current_exiting,
+    activeLockCount: s.active_lock_count != null ? Number(s.active_lock_count) : 0,
+    exitingLockCount: s.exiting_lock_count != null ? Number(s.exiting_lock_count) : 0,
+    delegatedAccountCount:
+      s.delegated_account_count != null ? Number(s.delegated_account_count) : 0,
+    totalDelegateVotes: s.total_delegate_votes,
+    latestBlock: s.latest_block,
+    fetchedAt: s.fetched_at,
+  };
+}
+
 export async function loadFromSupabase() {
-  const [ops, stats, events, counts, crisp, exitEvents, addedEvents] = await Promise.all([
+  const [
+    ops,
+    stats,
+    events,
+    counts,
+    crisp,
+    exitEvents,
+    addedEvents,
+    locks,
+    delegations,
+    govStats,
+  ] = await Promise.all([
     supabase.from("if_operators").select("*").order("available_tickets", { ascending: false }),
     supabase.from("if_network_stats").select("*").eq("id", 1).maybeSingle(),
     supabase
@@ -156,7 +224,7 @@ export async function loadFromSupabase() {
       .select("*")
       .order("block_number", { ascending: false })
       .order("log_index", { ascending: false })
-      .limit(200),
+      .limit(500),
     supabase.from("if_event_counts").select("*"),
     supabase
       .from(CRISP_EVENTS_TABLE)
@@ -182,6 +250,9 @@ export async function loadFromSupabase() {
       .eq("event_name", "CiphernodeAdded")
       .order("block_number", { ascending: false })
       .limit(500),
+    supabase.from("if_locks").select("*").order("amount", { ascending: false }),
+    supabase.from("if_delegations").select("*").order("votes", { ascending: false }),
+    supabase.from("if_governance_stats").select("*").eq("id", 1).maybeSingle(),
   ]);
 
   for (const r of [ops, stats, events, counts]) {
@@ -189,6 +260,12 @@ export async function loadFromSupabase() {
   }
   // CRISP table may not exist until 005 rename — soft-fail
   const crispEvents = crisp.error ? [] : (crisp.data || []).map(mapCrispEvent);
+  // Governance tables may not exist until 006 — soft-fail
+  const governance = {
+    stats: govStats.error ? null : mapGovernanceStats(govStats.data),
+    locks: locks.error ? [] : (locks.data || []).map(mapLock),
+    delegations: delegations.error ? [] : (delegations.data || []).map(mapDelegation),
+  };
 
   const eventSummary = { bonding: {}, registry: {}, interfold: {}, slashing: {}, refund: {} };
   const keyMap = {
@@ -241,6 +318,7 @@ export async function loadFromSupabase() {
     live: mapLive(stats.data),
     operators,
     timeline,
+    governance,
     crisp: {
       network: crispEvents[0]?.network || "mainnet",
       events: crispEvents,
@@ -276,6 +354,7 @@ export async function loadFromJson() {
     ...data,
     operators,
     timeline,
+    governance: data.governance || { stats: null, locks: [], delegations: [] },
     crisp: data.crisp || { network: "mainnet", events: [] },
     source: "json",
   };
@@ -289,6 +368,9 @@ export function subscribeRealtime(onChange) {
     .on("postgres_changes", { event: "*", schema: "public", table: "if_operators" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "if_network_stats" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "if_event_counts" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "if_locks" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "if_delegations" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "if_governance_stats" }, onChange)
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: CRISP_EVENTS_TABLE },

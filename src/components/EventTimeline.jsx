@@ -12,9 +12,33 @@ import { EventDetailDrawer } from "./EventDetailDrawer";
 
 const PAGE_SIZE = 40;
 
+/** Prefer ERC transfer direction: from → to, then tokenId. */
+const ARG_KEY_RANK = {
+  from: 0,
+  sender: 1,
+  to: 2,
+  recipient: 3,
+  owner: 4,
+  operator: 5,
+  tokenId: 6,
+  amount: 7,
+  value: 8,
+};
+
+function rankedArgEntries(args) {
+  return Object.entries(args).sort(([a], [b]) => {
+    const ra = ARG_KEY_RANK[a];
+    const rb = ARG_KEY_RANK[b];
+    if (ra != null || rb != null) {
+      return (ra ?? 50) - (rb ?? 50) || a.localeCompare(b);
+    }
+    return a.localeCompare(b);
+  });
+}
+
 function summarizeArgs(args, nowMs) {
   if (!args || typeof args !== "object") return "—";
-  const entries = Object.entries(args).slice(0, 4);
+  const entries = rankedArgEntries(args).slice(0, 4);
   if (!entries.length) return "—";
   return entries
     .map(([k, v]) => {
