@@ -94,7 +94,7 @@ export default function App() {
   const counts = useMemo(
     () => ({
       operators: operators.length,
-      events: data?.timeline?.length ?? 0,
+      events: data?.eventsTotal ?? data?.timeline?.length ?? 0,
       governance: data?.governance?.locks?.filter((l) => l.isActive && Number(l.amount) > 0).length ?? 0,
       dao: DAO_PROPOSALS.length,
     }),
@@ -300,6 +300,7 @@ export default function App() {
                 </div>
                 <EventTimeline
                   timeline={data?.timeline || []}
+                  eventsTotal={data?.eventsTotal}
                   filter={eventFilter}
                   onFilterChange={setEventFilter}
                 />

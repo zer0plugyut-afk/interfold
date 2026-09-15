@@ -8,6 +8,7 @@ import {
 } from "../lib/eventPhaseFilters";
 import { etherscanTx, num, shortAddr } from "../lib/format";
 import { formatUnlockAt, formatUnlockCountdown } from "../lib/timeFormat";
+import { fetchEventsPage, SUPABASE_PAGE, supabaseConfigured } from "../lib/supabaseData";
 import { EventDetailDrawer } from "./EventDetailDrawer";
 
 const PAGE_SIZE = 40;
@@ -151,27 +152,28 @@ function EventCards({ rows, showContract, txHref, onSelect, selectedKey, nowMs }
   );
 }
 
-function Pagination({ page, pageCount, total, pageSize, onPage }) {
-  if (pageCount <= 1) return null;
-  const from = page * pageSize + 1;
+function Pagination({ page, pageCount, total, pageSize, onPage, loading, canLoadMore }) {
+  if (pageCount <= 1 && !loading && !canLoadMore) return null;
+  const from = total ? page * pageSize + 1 : 0;
   const to = Math.min(total, (page + 1) * pageSize);
+  const atLastPage = page >= pageCount - 1;
   return (
     <div className="pager">
       <button
         type="button"
         className="pager__btn"
-        disabled={page <= 0}
+        disabled={page <= 0 || loading}
         onClick={() => onPage(page - 1)}
       >
         Prev
       </button>
       <span className="pager__label mono">
-        {from}–{to} of {total}
+        {loading ? "Loading…" : `${from}–${to} of ${total}`}
       </span>
       <button
         type="button"
         className="pager__btn"
-        disabled={page >= pageCount - 1}
+        disabled={loading || (atLastPage && !canLoadMore)}
         onClick={() => onPage(page + 1)}
       >
         Next
@@ -357,35 +359,75 @@ function TreeEventFilters({ contract, phase, onContractChange, onPhaseChange, co
   );
 }
 
-export function EventTimeline({ timeline, filter, onFilterChange }) {
+export function EventTimeline({ timeline, filter, onFilterChange, eventsTotal }) {
   const [phase, setPhase] = useState("all");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(null);
+  const [extra, setExtra] = useState([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
   const nowMs = useNow();
 
-  const contractCounts = useMemo(() => {
-    const counts = { all: timeline.length };
-    for (const meta of CONTRACT_FILTER_META) {
-      if (meta.id === "all") continue;
-      counts[meta.id] = timeline.filter((e) => e.contract === meta.id).length;
-    }
-    return counts;
+  // Reset appended pages when the board refreshes the first chunk
+  useEffect(() => {
+    setExtra([]);
+    setExhausted(false);
+    setPage(0);
   }, [timeline]);
 
+  const loaded = useMemo(() => {
+    if (!extra.length) return timeline;
+    const seen = new Set(timeline.map(rowKey));
+    const merged = [...timeline];
+    for (const e of extra) {
+      const k = rowKey(e);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      merged.push(e);
+    }
+    return merged;
+  }, [timeline, extra]);
+
+  const contractCounts = useMemo(() => {
+    const counts = {
+      all: Math.max(Number(eventsTotal) || 0, loaded.length),
+    };
+    for (const meta of CONTRACT_FILTER_META) {
+      if (meta.id === "all") continue;
+      counts[meta.id] = loaded.filter((e) => e.contract === meta.id).length;
+    }
+    return counts;
+  }, [loaded, eventsTotal]);
+
   const phaseCounts = useMemo(
-    () => (filter === "all" ? { all: 0 } : countByPhase(timeline, filter)),
-    [timeline, filter]
+    () => (filter === "all" ? { all: 0 } : countByPhase(loaded, filter)),
+    [loaded, filter]
   );
 
   const filtered = useMemo(() => {
-    if (filter === "all") return timeline;
-    return timeline.filter(
+    if (filter === "all") return loaded;
+    return loaded.filter(
       (e) => e.contract === filter && eventMatchesPhase(filter, phase, e.event)
     );
-  }, [timeline, filter, phase]);
+  }, [loaded, filter, phase]);
 
   const showContractCol = filter === "all";
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Sidebar/total from DB; keep Next alive past the first Supabase page.
+  const knownTotal = Math.max(Number(eventsTotal) || 0, filtered.length);
+  const maybeMore =
+    filter === "all" &&
+    supabaseConfigured &&
+    !exhausted &&
+    (knownTotal > loaded.length ||
+      (loaded.length > 0 && loaded.length % SUPABASE_PAGE === 0));
+  const totalForPager =
+    filter === "all"
+      ? maybeMore && knownTotal <= loaded.length
+        ? loaded.length + SUPABASE_PAGE
+        : knownTotal
+      : filtered.length;
+  const pageCount = Math.max(1, Math.ceil(totalForPager / PAGE_SIZE));
+  const displayTotal = filter === "all" ? Math.max(knownTotal, Number(eventsTotal) || 0) : filtered.length;
 
   useEffect(() => {
     setPhase("all");
@@ -407,7 +449,46 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, page]);
 
-  const goPage = (p) => {
+  const ensureLoaded = async (needCount) => {
+    if (!supabaseConfigured || exhausted || loadingMore) return;
+    let have = loaded.length;
+    if (have >= needCount) return;
+    setLoadingMore(true);
+    try {
+      const addAll = [];
+      const seen = new Set(loaded.map(rowKey));
+      while (have < needCount) {
+        const batch = await fetchEventsPage(have, SUPABASE_PAGE);
+        if (!batch.length) {
+          setExhausted(true);
+          break;
+        }
+        for (const e of batch) {
+          const k = rowKey(e);
+          if (seen.has(k)) continue;
+          seen.add(k);
+          addAll.push(e);
+        }
+        have += batch.length;
+        if (batch.length < SUPABASE_PAGE) {
+          setExhausted(true);
+          break;
+        }
+      }
+      if (addAll.length) setExtra((prev) => [...prev, ...addAll]);
+    } catch (err) {
+      console.warn("fetchEventsPage", err);
+      setExhausted(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const goPage = async (p) => {
+    const need = (p + 1) * PAGE_SIZE;
+    if (filter === "all" && need > loaded.length && maybeMore) {
+      await ensureLoaded(need);
+    }
     setPage(p);
     setSelected(null);
     document.querySelector(".workspace")?.scrollTo({ top: 0, behavior: "smooth" });
@@ -426,7 +507,7 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
         phaseCounts={phaseCounts}
       />
 
-      {!filtered.length ? (
+      {!filtered.length && !loadingMore ? (
         <div className="empty" style={{ marginTop: 12 }}>
           No events for this filter.
         </div>
@@ -436,9 +517,11 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
           <Pagination
             page={page}
             pageCount={pageCount}
-            total={filtered.length}
+            total={displayTotal}
             pageSize={PAGE_SIZE}
             onPage={goPage}
+            loading={loadingMore}
+            canLoadMore={maybeMore}
           />
           <div className="table-wrap events-table-wrap events-desktop">
             <table className="events-table">
@@ -511,9 +594,11 @@ export function EventTimeline({ timeline, filter, onFilterChange }) {
           <Pagination
             page={page}
             pageCount={pageCount}
-            total={filtered.length}
+            total={displayTotal}
             pageSize={PAGE_SIZE}
             onPage={goPage}
+            loading={loadingMore}
+            canLoadMore={maybeMore}
           />
         </>
       )}

@@ -33,6 +33,42 @@ const CRISP_LABEL = {
 
 const CRISP_EVENTS_TABLE = "if_crisp_mainnet_events";
 
+/** Supabase/PostgREST caps a single response (~1000). Page with .range until exhausted. */
+export const SUPABASE_PAGE = 1000;
+
+/**
+ * @param {() => import('@supabase/supabase-js').PostgrestFilterBuilder} buildQuery
+ *   Fresh query builder each page (order/filters already applied).
+ */
+async function fetchAllPages(buildQuery) {
+  const out = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await buildQuery().range(from, from + SUPABASE_PAGE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    out.push(...rows);
+    if (rows.length < SUPABASE_PAGE) break;
+    from += SUPABASE_PAGE;
+  }
+  return out;
+}
+
+/** One page of if_events (newest first). Used when Next needs rows past the first 1000. */
+export async function fetchEventsPage(offset = 0, limit = SUPABASE_PAGE) {
+  if (!supabase) return [];
+  const from = Math.max(0, Number(offset) || 0);
+  const size = Math.min(SUPABASE_PAGE, Math.max(1, Number(limit) || SUPABASE_PAGE));
+  const { data, error } = await supabase
+    .from("if_events")
+    .select("*")
+    .order("block_number", { ascending: false })
+    .order("log_index", { ascending: false })
+    .range(from, from + size - 1);
+  if (error) throw error;
+  return (data || []).map(mapEvent);
+}
+
 function mapOperator(o) {
   return {
     address: o.address,
@@ -210,7 +246,8 @@ export async function loadFromSupabase() {
     stats,
     events,
     counts,
-    crisp,
+    eventsCountRes,
+    crispRows,
     exitEvents,
     addedEvents,
     locks,
@@ -219,19 +256,25 @@ export async function loadFromSupabase() {
   ] = await Promise.all([
     supabase.from("if_operators").select("*").order("available_tickets", { ascending: false }),
     supabase.from("if_network_stats").select("*").eq("id", 1).maybeSingle(),
+    // First Supabase page only — EventTimeline Next fetches further ranges past 1000.
     supabase
       .from("if_events")
       .select("*")
       .order("block_number", { ascending: false })
       .order("log_index", { ascending: false })
-      .limit(500),
+      .range(0, SUPABASE_PAGE - 1),
     supabase.from("if_event_counts").select("*"),
-    supabase
-      .from(CRISP_EVENTS_TABLE)
-      .select("*")
-      .order("block_number", { ascending: false })
-      .order("log_index", { ascending: false })
-      .limit(300),
+    // Exact table size for sidebar + pager (not capped by max-rows).
+    supabase.from("if_events").select("*", { count: "exact", head: true }),
+    fetchAllPages(() =>
+      supabase
+        .from(CRISP_EVENTS_TABLE)
+        .select("*")
+        .order("block_number", { ascending: false })
+        .order("log_index", { ascending: false })
+    )
+      .then((data) => ({ data, error: null }))
+      .catch((error) => ({ data: null, error })),
     supabase
       .from("if_events")
       .select("event_name,args,block_number")
@@ -259,7 +302,7 @@ export async function loadFromSupabase() {
     if (r.error) throw r.error;
   }
   // CRISP table may not exist until 005 rename — soft-fail
-  const crispEvents = crisp.error ? [] : (crisp.data || []).map(mapCrispEvent);
+  const crispEvents = crispRows.error ? [] : (crispRows.data || []).map(mapCrispEvent);
   // Governance tables may not exist until 006 — soft-fail
   const governance = {
     stats: govStats.error ? null : mapGovernanceStats(govStats.data),
@@ -275,10 +318,17 @@ export async function loadFromSupabase() {
     slash: "slashing",
     refund: "refund",
   };
+  let eventsTotal = 0;
   for (const c of counts.data || []) {
+    const n = Number(c.count) || 0;
+    eventsTotal += n;
     const bucket = keyMap[c.contract_key] || c.contract_key;
     if (!eventSummary[bucket]) eventSummary[bucket] = {};
-    eventSummary[bucket][c.event_name] = Number(c.count);
+    eventSummary[bucket][c.event_name] = n;
+  }
+
+  if (!eventsCountRes.error && eventsCountRes.count != null) {
+    eventsTotal = Math.max(eventsTotal, Number(eventsCountRes.count) || 0);
   }
 
   const timeline = (events.data || []).map(mapEvent);
@@ -318,6 +368,7 @@ export async function loadFromSupabase() {
     live: mapLive(stats.data),
     operators,
     timeline,
+    eventsTotal: Math.max(eventsTotal, timeline.length),
     governance,
     crisp: {
       network: crispEvents[0]?.network || "mainnet",
