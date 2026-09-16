@@ -25,6 +25,7 @@ import {
   DAO_RULES,
   EPOCH_POOL,
   EPOCH_SCHEDULE,
+  TICKET_CAP,
   TICKET_SCENARIOS,
   daoCounts,
 } from "../lib/daoProposals";
@@ -316,7 +317,7 @@ function DaoDetail({ proposal: p, priceUsd }) {
 
       <section className="dao-block">
         <h4>
-          <Icon icon={ChartBarLineIcon} size={16} /> Ticket-block accrual
+          <Icon icon={ChartBarLineIcon} size={16} /> Ticket-block accrual · cap {TICKET_CAP} / node
         </h4>
         <p className="dao-formula mono">
           {p.accrualFormula || "rewardᵢ = epochPool × ticketBlocksᵢ ÷ Σ ticketBlocks"}
@@ -325,14 +326,14 @@ function DaoDetail({ proposal: p, priceUsd }) {
         <div className="dao-table-wrap">
           <table className="dao-table">
             <caption className="mono">
-              Illustrative at the 2M FOLD average epoch pool — actual per-ticket payout scales with
-              that epoch’s Fibonacci pool (600k → 4.8M)
+              Credited tickets = min(balance, {TICKET_CAP}) per node. Illustrative at the 2M FOLD
+              average epoch pool — actual rate scales with that epoch’s Fibonacci pool (600k → 4.8M)
             </caption>
             <thead>
               <tr>
-                <th>Active ticket pool (full epoch)</th>
-                <th>Payout / full-epoch ticket</th>
-                <th>10-ticket node</th>
+                <th>Credited ticket pool (full epoch)</th>
+                <th>Payout / credited full-epoch ticket</th>
+                <th>Node at cap ({TICKET_CAP})</th>
                 <th>Spot / ticket</th>
               </tr>
             </thead>
@@ -341,7 +342,7 @@ function DaoDetail({ proposal: p, priceUsd }) {
                 <tr key={row.tickets}>
                   <td className="mono">{exactFold(row.tickets)}</td>
                   <td className="mono">{exactFold(row.perTicket)} FOLD</td>
-                  <td className="mono">{exactFold(row.perTicket * 10)} FOLD</td>
+                  <td className="mono">{exactFold(row.perTicket * TICKET_CAP)} FOLD</td>
                   <td className="mono">{formatUsd(row.perTicket, priceUsd)}</td>
                 </tr>
               ))}
@@ -349,10 +350,12 @@ function DaoDetail({ proposal: p, priceUsd }) {
           </table>
         </div>
         <p className="dao-note">
-          At {p.budget.ticketStake}, doubling sUSDS at stake doubles the reward share.{" "}
-          {p.budget.bondNote} A ticket held only part of the epoch earns that fraction of a
-          full-epoch share. The 30-day VE lock means settlement rewards cannot be recycled into
-          tickets before unlock (~2 epochs later).
+          The denominator is the credited ticket pool — a node holding 1,000 tickets contributes{" "}
+          {TICKET_CAP}, not 1,000. At {p.budget.ticketStake}, {p.budget.bondNote} A ticket held only
+          part of the epoch earns that fraction of a full-epoch share. Early on (few nodes),
+          per-ticket payouts are high; as node count grows, each credited ticket’s share drops. The
+          30-day VE lock means settlement rewards cannot be recycled into tickets before unlock (~2
+          epochs later), so compounding is possible but cascade-limited.
         </p>
       </section>
 

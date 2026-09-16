@@ -23,6 +23,8 @@ export const PROGRAM_POOL = 12_000_000;
 export const TOTAL_SUPPLY = 1_200_000_000;
 /** 14-day epoch at ~30s blocks. */
 export const EPOCH_BLOCKS = 40_320;
+/** Program accrual cap — lottery/Draw weight is unchanged above this. */
+export const TICKET_CAP = 5;
 
 /** Fibonacci weights 1:1:2:3:5:8 → 20 units × 600,000 FOLD. */
 export const EPOCH_SCHEDULE = [
@@ -35,8 +37,8 @@ export const EPOCH_SCHEDULE = [
 ];
 
 /**
- * Indicative payout if that ticket count is held the full epoch,
- * illustrated at the 2M FOLD average epoch pool (actual rate scales with that epoch’s Fibonacci pool).
+ * Indicative payout per credited full-epoch ticket (credited = min(balance, 5) per node),
+ * illustrated at the 2M FOLD average epoch pool.
  */
 export const TICKET_SCENARIOS = [
   { tickets: 10, perTicket: 200_000 },
@@ -59,9 +61,9 @@ export const DAO_PROPOSALS = [
     sourceLabel: "Fileverse draft",
     sourceUrl: DAO_SOURCE_FILEVERSE,
     revisedNote:
-      "Updated to a backloaded Fibonacci epoch schedule (600k → 4.8M FOLD) with per-block ticket-block accrual.",
+      "Updated with a 5-ticket accrual cap per node (lottery weight above 5 is unchanged) on the Fibonacci epoch schedule.",
     summary:
-      "A time-boxed FOLD reward for ciphernode operators. 12,000,000 FOLD (1.0% of the 1.2B supply) from the Foundation treasury, paid in six biweekly batches on a backloaded Fibonacci schedule (pools 600,000 → 4,800,000 FOLD across the six epochs), in proportion to each operator’s ticket-block accrual (tickets × blocks held across the epoch). Paid as VE-locked FOLD via createLockFor(), so rewards immediately count as voting power and carry a 30-day unlock. Tracking is manual — no new contracts, no new emissions.",
+      "A time-boxed FOLD reward for ciphernode operators. 12,000,000 FOLD (1.0% of the 1.2B supply) from the Foundation treasury, paid in six biweekly batches on a backloaded Fibonacci schedule (pools 600,000 → 4,800,000 FOLD across the six epochs), in proportion to each operator’s ticket-block accrual (tickets × blocks held across the epoch; max 5 accrual tickets per node). Paid as VE-locked FOLD via createLockFor(), so rewards immediately count as voting power and carry a 30-day unlock. Tracking is manual — no new contracts, no new emissions.",
     motivation:
       "The network — including its own CRISP governance rounds — needs ciphernodes online. E3 requests are currently paused or minimal, so the existing fee-share rewards (BondingRegistry.distributeRewards) pay almost nothing. This program closes that availability gap bounded in time and budget.",
     conclusion:
@@ -70,6 +72,7 @@ export const DAO_PROPOSALS = [
       { id: "pool", label: "Reward pool", value: "12,000,000", unit: "FOLD", hint: "1.0% of 1.2B supply" },
       { id: "epochs", label: "Epochs", value: "6", unit: "× 14 days", hint: "Fibonacci 1:1:2:3:5:8" },
       { id: "batch", label: "Epoch pools", value: "600k→4.8M", unit: "FOLD", hint: "Backloaded schedule" },
+      { id: "cap", label: "Accrual cap", value: "5", unit: "tickets / node", hint: "Lottery weight uncapped" },
       { id: "lock", label: "VE lock", value: "30", unit: "days", hint: "createLockFor() on receipt" },
     ],
     design: [
@@ -83,15 +86,15 @@ export const DAO_PROPOSALS = [
       },
       {
         title: "Eligibility (“active”)",
-        body: "An operator is active at a given block if it is registered in the CiphernodeRegistry; bonded at or above the active-maintenance floor (isCiphernodeBonded); holds the minimum sortition tickets; and is not banned by the SlashingManager. Predicate failures at a given block contribute 0 for that block’s accrual.",
+        body: "An operator is active at a given block if it is registered in the CiphernodeRegistry; bonded at or above the active-maintenance floor (isCiphernodeBonded); holds the minimum sortition tickets; and is not banned by the SlashingManager. Predicate failures at a given block cost 0 for that block’s accrual.",
       },
       {
-        title: "Accrual (ticket-blocks, per-block)",
-        body: "That epoch’s Fibonacci-weighted pool is split in proportion to each operator’s ticket-block total: the sum, over every block of the epoch, of the operator’s ticket balance, with any inactive block contributing 0. A ticket held the whole epoch earns that epoch’s full block count (~40,320 at 30s blocks); one staked only at the final block earns 1 — so a last-block snipe is exactly priced. Settlement remains a recomputable script over archive-node state.",
+        title: "Accrual (ticket-blocks, capped at 5 / node)",
+        body: "That epoch’s pool is split in proportion to each operator’s ticket-block total: the sum, over every block of the epoch, of the credited ticket balance — the lesser of on-chain balance and 5 — with inactive blocks contributing 0. A credited ticket held the whole epoch earns ~40,320 ticket-blocks (30s blocks); one staked only at the final block earns 1. The cap bounds a single node’s share at most 5/5N of the pool, so capturing most of the program means registering many nodes (each with its own 32,000 FOLD bond and slashing exposure) rather than stacking one. Tickets above 5 keep full Draw/committee lottery weight; only program accrual is capped. A node holding 100 tickets accrues at 5; one holding 3 accrues at 3.",
       },
       {
         title: "Transparency",
-        body: "Each epoch the Foundation publishes a settlement sheet on IPFS and posts its CID: epoch start/end blocks; each operator’s per-block ticket series (or at least ticket-block total and 24h boundary state); effective counts; the pool total; and each entitlement. Corrected sheets are allowed before settlement; network-state disputes settle by the on-chain record.",
+        body: "Each epoch the Foundation publishes a settlement sheet on IPFS and posts its CID: epoch start/end blocks; each operator’s per-block ticket series (or at least ticket-block total and 24h boundary state); on-chain balance and credited (capped) balance; effective counts; the pool total; and each entitlement. Corrected sheets are allowed before settlement; network-state disputes settle by the on-chain record.",
       },
       {
         title: "Settlement",
@@ -109,11 +112,12 @@ export const DAO_PROPOSALS = [
       buyNote:
         "The Foundation will need to purchase ~$250k–$300k of FOLD on the open market for liquid funding. The treasury holds 39.06% of supply with linear unlock from Sep 1, 2026; remaining requirement comes from that supply as it unlocks.",
       ticketStake: "1,000 sUSDS per ticket",
-      bondNote: "Each ticket sits on top of the 32,000 FOLD bond (both slashable).",
+      bondNote:
+        "A node that fully stacks its 5 accrual tickets has 5,000 sUSDS at risk on top of the 32,000 FOLD bond. sUSDS beyond 5 tickets buys lottery weight only, not program income.",
     },
-    accrualFormula: "rewardᵢ = epochPool × ticketBlocksᵢ ÷ Σ ticketBlocks",
+    accrualFormula: "credited = min(ticketBalance, 5); rewardᵢ = epochPool × creditedBlocksᵢ ÷ Σ creditedBlocks",
     accrualFormulaHint:
-      "epochPool follows Fibonacci (600k→4.8M). ticketBlocksᵢ = Σ over epoch blocks of ticketsᵢ(b) while active (else 0). Full-epoch ticket ≈ 40,320 ticket-blocks.",
+      "epochPool follows Fibonacci (600k→4.8M). creditedBlocksᵢ = Σ over epoch blocks of min(ticketsᵢ(b), 5) while active (else 0). Full-epoch credited ticket ≈ 40,320 ticket-blocks. Lottery/Draw weight is not capped.",
     parameters: [
       {
         label: "Window",
@@ -126,7 +130,12 @@ export const DAO_PROPOSALS = [
       {
         label: "Per epoch",
         value:
-          "Fibonacci-weighted pool (1:1:2:3:5:8 → 600k / 600k / 1.2M / 1.8M / 3M / 4.8M FOLD), split in proportion to ticket-blocks accrued per operator (tickets × blocks)",
+          "Fibonacci-weighted pool (1:1:2:3:5:8 → 600k / 600k / 1.2M / 1.8M / 3M / 4.8M FOLD), split in proportion to ticket-blocks accrued per credited node (tickets × blocks)",
+      },
+      {
+        label: "Cap",
+        value:
+          "Max 5 accrual tickets per node per block (on-chain ticket balance above 5 does not accrue; lottery/Draw weight unaffected)",
       },
       {
         label: "“Active”",
@@ -155,7 +164,7 @@ export const DAO_PROPOSALS = [
       {
         risk: "Reward economy farmed by ticket sybils",
         mitigation:
-          "Tickets are the expensive input: 1,000 sUSDS at risk per ticket, on top of the 32,000 FOLD bond (both slashable). Proportional accrual means cheap low-stake sybils earn tiny shares; an adversary must risk more sUSDS than honest stake — with slashing exposure. Caps/weighting left for a later iteration.",
+          "Per-node 5-ticket cap: stacking sUSDS into one node accrues at most 5/5N of the pool, so no single node can capture a meaningful share. Separated nodes still cost their own 32,000 FOLD bond + 5,000 sUSDS per node and carry their own slashing exposure. Per-operator (bond-owner) caps are a later iteration if many-node separation becomes material.",
       },
       {
         risk: "Last-minute register / unregister",
@@ -186,7 +195,7 @@ export const DAO_PROPOSALS = [
     future: [
       "Mechanized on-chain delivery (claimable pool or settled credits).",
       "Continuous or duty-weighted accrual (uptime, DKG, decryption shares), ahead of where fee-share economics are heading.",
-      "Concentration and soul-splitting controls: caps on share per operator (or per bond-owner cohort) and de-sybilizing adjustments, if concentration materializes.",
+      "Concentration controls beyond the per-node cap: caps per bond-owner (de-sybilized) if many-node separation becomes material.",
       "Automatic sunset criteria (e.g., ends when sustained E3 throughput crosses a threshold).",
     ],
     stages: [
