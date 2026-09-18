@@ -2,8 +2,10 @@
  * CRISP (encrypted ballot) indexer — separate module.
  * Imported by index.js so `npm start` runs core mainnet + CRISP together.
  *
- * Mainnet addresses come from indexer/crisp-mainnet.json (interfold PR 1870).
- * After wiping Sepolia rows (005_wipe…sql), restart — cursors re-seed from deploy blocks.
+ * Mainnet addresses come from indexer/crisp-mainnet.json
+ * (current: E3ProgramRegistered tx 0x975b5104…8047 @ block 26004622).
+ * When CRISP_PROGRAM_ADDRESS changes, ensureSync resets the program cursor and
+ * drops rows for the previous address so we re-fetch from the new deploy block.
  */
 import fs from "fs";
 import path from "path";
@@ -17,8 +19,8 @@ const MAINNET_DEFAULTS = {
   network: "mainnet",
   chainId: 1,
   CRISPProgram: {
-    address: "0x847A22303639017bcDB7F7E49EEa4a4629c1169f",
-    blockNumber: 25812209,
+    address: "0x53FCdb21E73A461CfE6c64B19855204384B91BA3",
+    blockNumber: 25998868,
   },
   SelfRegistry: {
     address: "0x988104E6275359126bbDDDeE35159bd7d138A61C",
@@ -67,10 +69,7 @@ export function getCrispConfig() {
 
   const interfoldAddress = env("CRISP_INTERFOLD_ADDRESS", MAINNET.Interfold.address);
   const interfoldDeploy = Number(
-    env(
-      "CRISP_INTERFOLD_DEPLOY_BLOCK",
-      String(MAINNET.CRISPProgram.blockNumber)
-    )
+    env("CRISP_INTERFOLD_DEPLOY_BLOCK", String(MAINNET.CRISPProgram.blockNumber))
   );
 
   const registryAddress = env("CRISP_SELF_REGISTRY_ADDRESS", MAINNET.SelfRegistry.address);
@@ -185,14 +184,46 @@ async function ensureSync(sb, cfg) {
   for (const c of cfg.contracts) {
     const { data } = await sb
       .from(cfg.syncTable)
-      .select("contract_key")
+      .select("contract_key,contract_address,deploy_block,last_synced_block")
       .eq("contract_key", c.key)
       .maybeSingle();
-    if (!data) {
+
+    const nextAddr = String(c.address).toLowerCase();
+    const prevAddr = data?.contract_address
+      ? String(data.contract_address).toLowerCase()
+      : "";
+    const addressChanged = Boolean(data && prevAddr && prevAddr !== nextAddr);
+    const deployChanged =
+      Boolean(data) && Number(data.deploy_block) !== Number(c.deployBlock);
+
+    if (addressChanged) {
+      console.warn(
+        `[CRISP] ${c.label} address changed ${prevAddr} → ${nextAddr}; resetting cursor + dropping old rows`
+      );
+      await sb
+        .from(cfg.eventsTable)
+        .delete()
+        .eq("contract_key", c.key)
+        .eq("contract_address", prevAddr);
+    }
+
+    if (!data || addressChanged) {
       await sb.from(cfg.syncTable).upsert({
         contract_key: c.key,
         contract_address: c.address,
         last_synced_block: c.deployBlock - 1,
+        deploy_block: c.deployBlock,
+        chain_id: cfg.chainId,
+        network: cfg.network,
+        updated_at: new Date().toISOString(),
+      });
+    } else if (deployChanged) {
+      // Same address, new window: rewind so we catch logs from the earlier bound.
+      const rewindTo = Math.min(Number(data.last_synced_block), c.deployBlock - 1);
+      await sb.from(cfg.syncTable).upsert({
+        contract_key: c.key,
+        contract_address: c.address,
+        last_synced_block: rewindTo,
         deploy_block: c.deployBlock,
         chain_id: cfg.chainId,
         network: cfg.network,

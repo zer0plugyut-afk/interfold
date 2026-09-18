@@ -1,28 +1,24 @@
 {
-  "source": "https://github.com/theinterfold/interfold/pull/1870",
+  "source": "https://etherscan.io/tx/0x975b5104729480bdf914304ce81726041e27450580fab4cd2f2750b7f0848047",
   "network": "mainnet",
   "chainId": 1,
+  "previous": {
+    "note": "Prior CRISPProgram from interfold PR 1870 — superseded by E3ProgramRegistered at block 26004622",
+    "CRISPProgram": {
+      "address": "0x847A22303639017bcDB7F7E49EEa4a4629c1169f",
+      "blockNumber": 25812209,
+      "imageId": "0x7ed0ddeb0cafa64228b51399dff5ea00696c2617f28636b05bd67e6c1506eac3"
+    }
+  },
   "RiscZeroGroth16Verifier": {
-    "address": "0x082263Bb53463Ca6c7082bDAFEd51EfA9509cde0",
-    "blockNumber": 25812195
-  },
-  "Risc0BfvCiphertextVerifier": {
-    "address": "0x40a18Fc27ac4a4d86fA70385c6814e453b6BFF2c",
-    "blockNumber": 25812196,
-    "imageId": "0x7ed0ddeb0cafa64228b51399dff5ea00696c2617f28636b05bd67e6c1506eac3"
-  },
-  "HonkVerifier": {
-    "address": "0x0FA7688B795f61956E7bB423820a0FdACAb9AC8C",
-    "blockNumber": 25812204
-  },
-  "OnchainHonkVerifier": {
-    "address": "0x02eA2e73238fBA4df9dC608a7339B960291238b0",
-    "blockNumber": 25812208
+    "address": "0xB6AC0ef383dafd09b79Eadc96491CAE2AD61D331",
+    "blockNumber": 25998857
   },
   "CRISPProgram": {
-    "address": "0x847A22303639017bcDB7F7E49EEa4a4629c1169f",
-    "blockNumber": 25812209,
-    "imageId": "0x7ed0ddeb0cafa64228b51399dff5ea00696c2617f28636b05bd67e6c1506eac3"
+    "address": "0x53FCdb21E73A461CfE6c64B19855204384B91BA3",
+    "blockNumber": 25998868,
+    "registeredBlock": 26004622,
+    "imageId": "0x9d3e21fd7cc08e629cb467e5ca6bfc8e1a645b483bfd91b6b1648ced259110fc"
   },
   "SelfRegistry": {
     "address": "0x988104E6275359126bbDDDeE35159bd7d138A61C",

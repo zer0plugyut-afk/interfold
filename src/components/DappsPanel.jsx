@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ArrowLeft01Icon, BrowserIcon } from "@hugeicons/core-free-icons";
 import { Icon } from "./Icon";
-import { DAPPS } from "../lib/dapps";
+import { DAPPS, getDapp } from "../lib/dapps";
+import { shortAddr } from "../lib/format";
 import { CrispPanel } from "./CrispPanel";
 
 function DappIcon({ dapp }) {
@@ -27,6 +28,7 @@ function DappIcon({ dapp }) {
 
 export function DappsPanel({ dappId, onSelectDapp, crispEvents, crispNetwork }) {
   if (dappId === "crisp") {
+    const dapp = getDapp("crisp");
     return (
       <div className="dapps-panel">
         <button type="button" className="dapps-back" onClick={() => onSelectDapp(null)}>
@@ -38,9 +40,30 @@ export function DappsPanel({ dappId, onSelectDapp, crispEvents, crispNetwork }) 
           <p>
             Encrypted ballot program on{" "}
             <span className="hint">{crispNetwork || "mainnet"}</span>.
+            {dapp?.programAddress ? (
+              <>
+                {" "}
+                Tracking{" "}
+                <a
+                  className="addr mono"
+                  href={dapp.etherscan}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {shortAddr(dapp.programAddress)}
+                </a>
+                .
+              </>
+            ) : null}
           </p>
         </div>
-        <CrispPanel events={crispEvents || []} network={crispNetwork || "mainnet"} />
+        <CrispPanel
+          events={crispEvents || []}
+          network={crispNetwork || "mainnet"}
+          programAddress={dapp?.programAddress}
+          programDeployBlock={dapp?.programDeployBlock}
+          etherscan={dapp?.etherscan}
+        />
       </div>
     );
   }
@@ -71,6 +94,9 @@ export function DappsPanel({ dappId, onSelectDapp, crispEvents, crispNetwork }) 
                 </div>
                 <p className="dapp-card__tagline">{dapp.tagline}</p>
                 <p className="dapp-card__desc">{dapp.description}</p>
+                {dapp.programAddress ? (
+                  <p className="dapp-card__addr mono">{shortAddr(dapp.programAddress)}</p>
+                ) : null}
               </div>
             </button>
           </li>

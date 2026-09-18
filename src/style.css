@@ -1421,6 +1421,12 @@ html[data-theme="light"] .dash-tab.is-active {
   color: var(--text);
 }
 
+.dapp-card__addr {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
 .dapp-card__desc {
   margin: 6px 0 0;
   font-size: 0.72rem;

@@ -110,7 +110,13 @@ function Pagination({ page, pageCount, total, pageSize, onPage }) {
   );
 }
 
-export function CrispPanel({ events, network }) {
+export function CrispPanel({
+  events,
+  network,
+  programAddress,
+  programDeployBlock,
+  etherscan,
+}) {
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -162,7 +168,22 @@ export function CrispPanel({ events, network }) {
         <strong>Mainnet</strong>
         <span>
           Encrypted ballot (CRISP) on Ethereum mainnet — CRISPProgram, SelfRegistry, and InterFold
-          E3 lifecycle from the CRISP deploy block.
+          E3 lifecycle from the CRISP deploy block
+          {programDeployBlock ? ` #${num(programDeployBlock)}` : ""}.
+          {programAddress ? (
+            <>
+              {" "}
+              Program{" "}
+              <a
+                className="addr mono"
+                href={etherscan || `https://etherscan.io/address/${programAddress}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {shortAddr(programAddress)}
+              </a>
+            </>
+          ) : null}
         </span>
       </div>
 
